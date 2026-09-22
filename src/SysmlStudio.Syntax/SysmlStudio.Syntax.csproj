@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- ANTLR's generated listeners carry crefs like "SysMLv2Parser.namespace",
+         which are not valid C# identifiers. The generated code is not ours to
+         fix, so its doc-comment warnings are muted here and nowhere else. -->
+    <NoWarn>$(NoWarn);CS1584;CS1658;CS1734;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime.Standard" />
+    <PackageReference Include="Antlr4BuildTasks" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Antlr4 Include="..\..\grammar\SysMLv2Lexer.g4">
+      <Package>SysmlStudio.Syntax.Generated</Package>
+    </Antlr4>
+    <Antlr4 Include="..\..\grammar\SysMLv2Parser.g4">
+      <Package>SysmlStudio.Syntax.Generated</Package>
+    </Antlr4>
+  </ItemGroup>
+
+</Project>

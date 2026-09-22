@@ -1,0 +1,10 @@
+<Project>
+
+  <!-- The gates every project is held to: the .NET analyzers, Roslynator and
+       Sonar, with warnings failing the build. `dotnet format` checks the rest. -->
+  <ItemGroup Condition="'$(EnableQualityGates)' != 'false'">
+    <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" />
+    <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" />
+  </ItemGroup>
+
+</Project>
