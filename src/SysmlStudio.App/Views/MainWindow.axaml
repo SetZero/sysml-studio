@@ -1,0 +1,158 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+        xmlns:conv="clr-namespace:SysmlStudio.App.Views"
+        xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
+        xmlns:nodifyc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
+        xmlns:edit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+        x:Class="SysmlStudio.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="SysML Studio"
+        Width="1400" Height="900">
+
+  <Window.Resources>
+    <conv:MaturityBrushConverter x:Key="MaturityBrush" />
+  </Window.Resources>
+
+  <DockPanel>
+
+    <!-- Commands -->
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem Header="_Open Folder…" Click="OnOpenFolder" />
+        <Separator />
+        <MenuItem Header="E_xit" Click="OnExit" />
+      </MenuItem>
+      <MenuItem Header="_Diagram">
+        <MenuItem Header="_Relayout" Command="{Binding RelayoutCommand}" />
+      </MenuItem>
+    </Menu>
+
+    <!-- What the model looks like right now -->
+    <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="#33000000" Padding="8,4">
+      <TextBlock Text="{Binding Status}" FontSize="12" Opacity="0.8" />
+    </Border>
+
+    <Grid ColumnDefinitions="320,4,*,4,360">
+
+      <!-- The browser -->
+      <DockPanel Grid.Column="0">
+        <TextBlock DockPanel.Dock="Top" Text="Model" FontWeight="SemiBold" Margin="8,8,8,4" />
+        <TreeView ItemsSource="{Binding Roots}"
+                  SelectedItem="{Binding SelectedElement, Mode=TwoWay}">
+          <TreeView.ItemTemplate>
+            <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:ElementViewModel">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Border Width="10" Height="10" CornerRadius="5" VerticalAlignment="Center"
+                        Background="{Binding Maturity, Converter={StaticResource MaturityBrush}}" />
+                <TextBlock Text="{Binding Label}" />
+                <TextBlock Text="{Binding Kind}" Opacity="0.5" FontSize="11" VerticalAlignment="Center" />
+              </StackPanel>
+            </TreeDataTemplate>
+          </TreeView.ItemTemplate>
+        </TreeView>
+      </DockPanel>
+
+      <GridSplitter Grid.Column="1" Background="Transparent" />
+
+      <!-- Diagrams -->
+      <DockPanel Grid.Column="2">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="8">
+          <TextBlock Text="Open as:" VerticalAlignment="Center" />
+          <ItemsControl ItemsSource="{Binding AvailableDiagrams}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="6" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Content="{Binding}"
+                        Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).OpenDiagramCommand}"
+                        CommandParameter="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <TabControl ItemsSource="{Binding Documents}"
+                    SelectedItem="{Binding SelectedDocument, Mode=TwoWay}">
+          <TabControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DiagramDocumentViewModel">
+              <TextBlock Text="{Binding Title}" />
+            </DataTemplate>
+          </TabControl.ItemTemplate>
+          <TabControl.ContentTemplate>
+            <DataTemplate x:DataType="vm:DiagramDocumentViewModel">
+              <nodify:NodifyEditor ItemsSource="{Binding Nodes}"
+                                   Connections="{Binding Connections}"
+                                   GridCellSize="16">
+                <nodify:NodifyEditor.ItemContainerTheme>
+                  <ControlTheme TargetType="nodify:ItemContainer"
+                                BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"
+                                x:DataType="vm:DiagramNodeViewModel">
+                    <Setter Property="Location" Value="{Binding Location, Mode=TwoWay}" />
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                  </ControlTheme>
+                </nodify:NodifyEditor.ItemContainerTheme>
+
+                <nodify:NodifyEditor.ItemTemplate>
+                  <DataTemplate x:DataType="vm:DiagramNodeViewModel">
+                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            BorderBrush="{Binding Maturity, Converter={StaticResource MaturityBrush}}"
+                            BorderThickness="2" CornerRadius="4" Padding="8"
+                            MinWidth="{Binding Width}">
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Stereotype}" FontSize="11" Opacity="0.6" />
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                        <ItemsControl ItemsSource="{Binding Features}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <TextBlock Text="{Binding}" FontSize="11" Opacity="0.8" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </nodify:NodifyEditor.ItemTemplate>
+
+                <nodify:NodifyEditor.ConnectionTemplate>
+                  <DataTemplate x:DataType="vm:DiagramConnectionViewModel">
+                    <nodifyc:Connection Source="{Binding SourceAnchor}"
+                                       Target="{Binding TargetAnchor}"
+                                       Text="{Binding Label}"
+                                       ToolTip.Tip="{Binding Description}" />
+                  </DataTemplate>
+                </nodify:NodifyEditor.ConnectionTemplate>
+              </nodify:NodifyEditor>
+            </DataTemplate>
+          </TabControl.ContentTemplate>
+        </TabControl>
+      </DockPanel>
+
+      <GridSplitter Grid.Column="3" Background="Transparent" />
+
+      <!-- The element as written, and the problems -->
+      <Grid Grid.Column="4" RowDefinitions="*,4,200">
+        <DockPanel Grid.Row="0">
+          <TextBlock DockPanel.Dock="Top" Text="Source" FontWeight="SemiBold" Margin="8,8,8,4" />
+          <edit:TextEditor Name="SourceEditor"
+                           Document="{Binding SourceText, Converter={x:Static conv:TextDocumentConverter.Instance}}"
+                           IsReadOnly="True"
+                           ShowLineNumbers="True"
+                           FontFamily="Cascadia Code,Consolas,Menlo,monospace"
+                           FontSize="12" />
+        </DockPanel>
+
+        <GridSplitter Grid.Row="1" Background="Transparent" />
+
+        <DockPanel Grid.Row="2">
+          <TextBlock DockPanel.Dock="Top" Text="Problems" FontWeight="SemiBold" Margin="8,8,8,4" />
+          <ListBox ItemsSource="{Binding Problems}" FontSize="11" />
+        </DockPanel>
+      </Grid>
+
+    </Grid>
+  </DockPanel>
+</Window>

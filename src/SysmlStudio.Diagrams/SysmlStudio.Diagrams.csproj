@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Msagl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SysmlStudio.Model\SysmlStudio.Model.csproj" />
+  </ItemGroup>
+
+</Project>

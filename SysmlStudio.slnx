@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/SysmlStudio.App/SysmlStudio.App.csproj" />
+    <Project Path="src/SysmlStudio.Diagrams/SysmlStudio.Diagrams.csproj" />
     <Project Path="src/SysmlStudio.Model/SysmlStudio.Model.csproj" />
     <Project Path="src/SysmlStudio.Syntax/SysmlStudio.Syntax.csproj" />
   </Folder>

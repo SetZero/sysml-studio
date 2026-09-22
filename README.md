@@ -15,12 +15,21 @@ actually changed.
 |---|---|
 | `SysmlStudio.Syntax` — parse SysML v2 text, keep tokens and comments | works |
 | `SysmlStudio.Model` — element tree, relations, name resolution | works |
+| `SysmlStudio.Diagrams` — the five diagram kinds, MSAGL layout | works |
+| `SysmlStudio.App` — the Avalonia application | browses and draws; read-only |
 | `SysmlStudio.Editing` — graphical edits as text patches | not started |
-| `SysmlStudio.Diagrams` — the five diagram kinds, MSAGL layout | not started |
-| `SysmlStudio.App` — the Avalonia application | not started |
 
-There is no application to run yet. What exists can be seen with the parse
-checker, which loads a folder and prints what it found:
+Open a model folder:
+
+```
+dotnet run --project src/SysmlStudio.App -- ../os/docs/sysml
+```
+
+The browser lists every package and element with its maturity colour; select
+one and the buttons above the canvas offer the diagrams that can be drawn of
+it. Nothing writes to the model yet.
+
+What the model holds can also be printed without the window:
 
 ```
 dotnet run --project tools/ParseCheck -- ../os/docs/sysml

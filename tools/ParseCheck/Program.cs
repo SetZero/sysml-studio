@@ -1,5 +1,5 @@
+using SysmlStudio.Diagrams;
 using SysmlStudio.Model;
-using SysmlStudio.Syntax;
 
 var dir = args[0];
 var workspace = SysmlWorkspace.Load(dir);
@@ -27,5 +27,21 @@ Console.WriteLine();
 Console.WriteLine("maturity:");
 foreach (var group in workspace.Elements.Where(e => e.Maturity is not null).GroupBy(e => e.Maturity))
     Console.WriteLine($"  {group.Count(),5}  {group.Key}");
+
+Console.WriteLine();
+Console.WriteLine("diagrams:");
+foreach (var element in workspace.Elements)
+{
+    foreach (var kind in DiagramBuilder.KindsFor(element))
+    {
+        var diagram = DiagramBuilder.Build(kind, element);
+        if (diagram.Nodes.Count == 0)
+            continue;
+
+        DiagramLayout.Apply(diagram);
+        if (diagram.Edges.Count > 0)
+            Console.WriteLine($"  {kind,-16} {element.DisplayName,-28} {diagram.Nodes.Count,3} nodes {diagram.Edges.Count,3} edges");
+    }
+}
 
 return workspace.Errors.Count == 0 ? 0 : 1;

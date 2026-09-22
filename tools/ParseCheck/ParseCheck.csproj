@@ -3,6 +3,6 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SysmlStudio.Model\SysmlStudio.Model.csproj" />
+    <ProjectReference Include="..\..\src\SysmlStudio.Diagrams\SysmlStudio.Diagrams.csproj" />
   </ItemGroup>
 </Project>
