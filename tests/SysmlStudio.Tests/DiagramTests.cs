@@ -208,4 +208,35 @@ public sealed class DiagramTests
             }
         }
     }
+
+    [Fact]
+    public void UnrelatedGroupsAreLaidOutApartAndNeverInterleave()
+    {
+        var diagram = DiagramBuilder.Build(DiagramKind.Definition, Fixture().Find("Sample")!);
+        DiagramLayout.Apply(diagram);
+
+        // Everything reachable from Vehicle along edges is one group; the rest is not connected to it.
+        var group = new List<DiagramNode> { diagram.Nodes.Single(n => n.Label == "Vehicle") };
+        for (var i = 0; i < group.Count; i++)
+        {
+            var node = group[i];
+            group.AddRange(diagram.Edges
+                .Where(e => ReferenceEquals(e.Source, node) || ReferenceEquals(e.Target, node))
+                .Select(e => ReferenceEquals(e.Source, node) ? e.Target : e.Source)
+                .Where(n => !group.Contains(n)).Distinct().ToList());
+        }
+
+        var others = diagram.Nodes.Except(group).ToList();
+        Assert.NotEmpty(others);
+
+        var left = group.Min(n => n.X);
+        var right = group.Max(n => n.X + n.Width);
+        var top = group.Min(n => n.Y);
+        var bottom = group.Max(n => n.Y + n.Height);
+        foreach (var other in others)
+        {
+            var outside = other.X >= right || other.X + other.Width <= left || other.Y >= bottom || other.Y + other.Height <= top;
+            Assert.True(outside, $"'{other.Label}' sits inside the Vehicle group");
+        }
+    }
 }

@@ -55,16 +55,47 @@ public static class DiagramLayout
         if (diagram.Nodes.Count == 0)
             return;
 
+        // Each group of connected boxes is laid out on its own and the groups
+        // are packed side by side, the way Graphviz does it. Laid out as one
+        // graph, unrelated boxes share layers with related ones, and wrapping a
+        // long layer can put a box a screen away from the box it points at.
+        var components = ConnectedComponents(diagram);
+        var blocks = new List<List<DiagramNode>>();
+        foreach (var component in components.Where(c => c.Count > 1))
+        {
+            LayOutComponent(diagram, component);
+            blocks.Add(component);
+        }
+
+        // Boxes related to nothing on the diagram go in one tidy grid at the end.
+        var loners = components.Where(c => c.Count == 1).SelectMany(c => c).ToList();
+        if (loners.Count > 0)
+        {
+            ArrangeGrid(loners);
+            blocks.Add(loners);
+        }
+
+        Pack(blocks);
+        RemoveOverlaps(diagram);
+        Route(diagram);
+    }
+
+    /// <summary>Lays out one connected group with MSAGL, at the origin.</summary>
+    private static void LayOutComponent(Diagram diagram, List<DiagramNode> component)
+    {
+        var members = component.ToHashSet();
         var graph = new GeometryGraph();
         var shapes = new Dictionary<DiagramNode, Node>();
-        foreach (var node in diagram.Nodes)
+        foreach (var node in component)
         {
             var shape = new Node(CurveFactory.CreateRectangle(node.Width, node.Height, new Point()), node);
             shapes[node] = shape;
             graph.Nodes.Add(shape);
         }
 
-        foreach (var edge in diagram.Edges)
+        var edges = diagram.Edges.Where(e => members.Contains(e.Source) && members.Contains(e.Target)
+                                             && !ReferenceEquals(e.Source, e.Target));
+        foreach (var edge in edges)
             graph.Edges.Add(new Edge(shapes[edge.Source], shapes[edge.Target]) { UserData = edge });
 
         var settings = new SugiyamaLayoutSettings
@@ -83,9 +114,84 @@ public static class DiagramLayout
             node.Y = top - shape.Center.Y - (node.Height / 2);
         }
 
-        WrapWideLayers(diagram);
-        RemoveOverlaps(diagram);
-        Route(diagram);
+        WrapWideLayers(component, [.. edges]);
+    }
+
+    /// <summary>The diagram's boxes grouped by the edges between them.</summary>
+    private static List<List<DiagramNode>> ConnectedComponents(Diagram diagram)
+    {
+        var parent = diagram.Nodes.ToDictionary(n => n, n => n);
+        DiagramNode Find(DiagramNode n)
+        {
+            while (!ReferenceEquals(parent[n], n))
+                n = parent[n] = parent[parent[n]];
+            return n;
+        }
+
+        foreach (var edge in diagram.Edges)
+            parent[Find(edge.Source)] = Find(edge.Target);
+
+        // Keep the diagram's own order inside each group, biggest group first.
+        return [.. diagram.Nodes.GroupBy(Find).Select(g => g.ToList()).OrderByDescending(g => g.Count)];
+    }
+
+    /// <summary>Unrelated boxes in rows, as close to square as their sizes allow.</summary>
+    private static void ArrangeGrid(List<DiagramNode> nodes)
+    {
+        var area = nodes.Sum(n => (n.Width + BoxGap) * (n.Height + RowGap));
+        var maxWidth = Math.Max(600, Math.Sqrt(area * 1.6));
+        double x = 0, y = 0, rowHeight = 0;
+        foreach (var node in nodes)
+        {
+            if (x > 0 && x + node.Width > maxWidth)
+            {
+                x = 0;
+                y += rowHeight + RowGap;
+                rowHeight = 0;
+            }
+
+            node.X = x;
+            node.Y = y;
+            x += node.Width + BoxGap;
+            rowHeight = Math.Max(rowHeight, node.Height);
+        }
+    }
+
+    /// <summary>
+    /// Packs the laid-out groups onto shelves: left to right, a new shelf when
+    /// the picture would grow wider than a landscape page of this much content.
+    /// </summary>
+    private static void Pack(List<List<DiagramNode>> blocks)
+    {
+        const double blockGap = 80;
+        var area = blocks.Sum(b => Width(b) * Height(b));
+        var maxWidth = Math.Max(1400, Math.Sqrt(area * 1.8));
+
+        double x = 0, y = 0, shelfHeight = 0;
+        foreach (var block in blocks)
+        {
+            var width = Width(block);
+            if (x > 0 && x + width > maxWidth)
+            {
+                x = 0;
+                y += shelfHeight + blockGap;
+                shelfHeight = 0;
+            }
+
+            var left = block.Min(n => n.X);
+            var top = block.Min(n => n.Y);
+            foreach (var node in block)
+            {
+                node.X += x - left;
+                node.Y += y - top;
+            }
+
+            x += width + blockGap;
+            shelfHeight = Math.Max(shelfHeight, Height(block));
+        }
+
+        static double Width(List<DiagramNode> b) => b.Max(n => n.X + n.Width) - b.Min(n => n.X);
+        static double Height(List<DiagramNode> b) => b.Max(n => n.Y + n.Height) - b.Min(n => n.Y);
     }
 
     /// <summary>
@@ -190,14 +296,14 @@ public static class DiagramLayout
     /// diagram's content would be is wrapped into several rows, in the order
     /// the layout chose, and the layers below move down to make room.
     /// </summary>
-    private static void WrapWideLayers(Diagram diagram)
+    private static void WrapWideLayers(List<DiagramNode> nodes, List<DiagramEdge> edges)
     {
-        var area = diagram.Nodes.Sum(n => (n.Width + BoxGap) * (n.Height + RowGap));
+        var area = nodes.Sum(n => (n.Width + BoxGap) * (n.Height + RowGap));
         var maxWidth = Math.Max(1400, Math.Sqrt(area * 1.8));
 
         // A layer is the nodes sharing a centre line; boxes of different
         // heights in one layer are still one layer.
-        var layers = diagram.Nodes
+        var layers = nodes
             .GroupBy(n => Math.Round(n.Y + (n.Height / 2)))
             .OrderBy(g => g.Key)
             .Select(g => g.OrderBy(n => n.X).ToList())
@@ -211,8 +317,12 @@ public static class DiagramLayout
             foreach (var node in layer)
                 node.Y += shift;
 
+            // Only a hub's fan-out is wrapped: every box in the layer hangs off
+            // one common box, so wrapping keeps each box next to its partner.
+            // A layer mixing several parents keeps the order MSAGL chose, which
+            // is what keeps related boxes near each other.
             var width = layer.Sum(n => n.Width) + (BoxGap * (layer.Count - 1));
-            if (width <= maxWidth)
+            if (width <= maxWidth || !SharesAHub(layer, edges))
             {
                 rows.Add(layer);
                 continue;
@@ -252,7 +362,7 @@ public static class DiagramLayout
 
         // Centre every row, as a unit, on the new and narrower picture, so a
         // hub sits above the rows it fans out to.
-        var centre = diagram.Nodes.Max(n => n.X + n.Width) / 2;
+        var centre = nodes.Max(n => n.X + n.Width) / 2;
         foreach (var row in rows)
         {
             var rowCentre = (row.Min(n => n.X) + row.Max(n => n.X + n.Width)) / 2;
@@ -260,9 +370,31 @@ public static class DiagramLayout
                 node.X += centre - rowCentre;
         }
 
-        var minX = diagram.Nodes.Min(n => n.X);
-        foreach (var node in diagram.Nodes)
+        var minX = nodes.Min(n => n.X);
+        foreach (var node in nodes)
             node.X -= minX;
+    }
+
+    /// <summary>Whether one box outside the layer is connected to every box in it.</summary>
+    private static bool SharesAHub(List<DiagramNode> layer, List<DiagramEdge> edges)
+    {
+        HashSet<DiagramNode>? common = null;
+        foreach (var node in layer)
+        {
+            var neighbours = edges
+                .Where(e => ReferenceEquals(e.Source, node) || ReferenceEquals(e.Target, node))
+                .Select(e => ReferenceEquals(e.Source, node) ? e.Target : e.Source)
+                .Where(n => !layer.Contains(n))
+                .ToHashSet();
+            if (common is null)
+                common = neighbours;
+            else
+                common.IntersectWith(neighbours);
+            if (common.Count == 0)
+                return false;
+        }
+
+        return common is { Count: > 0 };
     }
 
     /// <summary>A box as the canvas will draw it: header, then one line per feature.</summary>
