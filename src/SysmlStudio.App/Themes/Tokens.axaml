@@ -1,0 +1,144 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Type. Condensed sans for the interface, mono for anything that is
+       model text: names as written, paths, positions, messages. -->
+  <FontFamily x:Key="UiFont">avares://SysmlStudio.App/Assets/Fonts#IBM Plex Sans Condensed</FontFamily>
+  <FontFamily x:Key="MonoFont">avares://SysmlStudio.App/Assets/Fonts#IBM Plex Mono</FontFamily>
+
+  <ResourceDictionary.ThemeDictionaries>
+
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="WorkbenchBrush" Color="#EDEDEA" />
+      <SolidColorBrush x:Key="SurfaceBrush" Color="#F6F6F4" />
+      <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="CanvasBrush" Color="#FAFAF8" />
+      <SolidColorBrush x:Key="CanvasGridBrush" Color="#EAEAE6" />
+      <SolidColorBrush x:Key="HeaderBrush" Color="#F0F0ED" />
+      <SolidColorBrush x:Key="BorderBrush" Color="#D8D8D3" />
+      <SolidColorBrush x:Key="BorderStrongBrush" Color="#BEBEB8" />
+      <SolidColorBrush x:Key="TextBrush" Color="#1F2327" />
+      <SolidColorBrush x:Key="TextMutedBrush" Color="#6B7076" />
+      <SolidColorBrush x:Key="TextFaintBrush" Color="#9CA1A7" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#56759B" />
+      <SolidColorBrush x:Key="AccentHoverBrush" Color="#4A6789" />
+      <SolidColorBrush x:Key="AccentSoftBrush" Color="#DFE6EE" />
+      <SolidColorBrush x:Key="AccentTextBrush" Color="#2F5580" />
+      <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="SelectionBrush" Color="#DCE2E9" />
+      <SolidColorBrush x:Key="HoverBrush" Color="#E8E9E6" />
+      <SolidColorBrush x:Key="ErrorBrush" Color="#B3261E" />
+      <SolidColorBrush x:Key="ErrorSoftBrush" Color="#F6E3E1" />
+      <SolidColorBrush x:Key="WarningBrush" Color="#96690A" />
+      <SolidColorBrush x:Key="OverlayBrush" Color="#66303338" />
+
+      <!-- Maturity: the one thing colour means. -->
+      <SolidColorBrush x:Key="MaturityImplemented" Color="#3F5F86" />
+      <SolidColorBrush x:Key="MaturityInProgress" Color="#C39227" />
+      <SolidColorBrush x:Key="MaturityWrittenAhead" Color="#86A6C9" />
+      <SolidColorBrush x:Key="MaturityPlanned" Color="#B9BEC4" />
+      <SolidColorBrush x:Key="MaturityNone" Color="#D2D4D6" />
+
+      <!-- Syntax colours for the source editor. -->
+      <Color x:Key="SyntaxKeyword">#2F5580</Color>
+      <Color x:Key="SyntaxComment">#7C8A80</Color>
+      <Color x:Key="SyntaxString">#8A4F1D</Color>
+      <Color x:Key="SyntaxNumber">#6D3F8E</Color>
+      <Color x:Key="SyntaxMetadata">#3E7A5A</Color>
+
+      <!-- Dock's own keys, pointed at the same palette. -->
+      <SolidColorBrush x:Key="DockSurfaceWorkbenchBrush" Color="#EDEDEA" />
+      <SolidColorBrush x:Key="DockSurfaceSidebarBrush" Color="#F6F6F4" />
+      <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="#FAFAF8" />
+      <SolidColorBrush x:Key="DockSurfacePanelBrush" Color="#F6F6F4" />
+      <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="#F0F0ED" />
+      <SolidColorBrush x:Key="DockSurfaceHeaderActiveBrush" Color="#F0F0ED" />
+      <SolidColorBrush x:Key="DockBorderSubtleBrush" Color="#D8D8D3" />
+      <SolidColorBrush x:Key="DockBorderStrongBrush" Color="#BEBEB8" />
+      <SolidColorBrush x:Key="DockSeparatorBrush" Color="#D8D8D3" />
+      <SolidColorBrush x:Key="DockSplitterIdleBrush" Color="#D8D8D3" />
+      <SolidColorBrush x:Key="DockSplitterHoverBrush" Color="#9FB3CB" />
+      <SolidColorBrush x:Key="DockSplitterDragBrush" Color="#56759B" />
+      <SolidColorBrush x:Key="DockTabBackgroundBrush" Color="#00000000" />
+      <SolidColorBrush x:Key="DockTabHoverBackgroundBrush" Color="#E8E9E6" />
+      <SolidColorBrush x:Key="DockTabActiveBackgroundBrush" Color="#FAFAF8" />
+      <SolidColorBrush x:Key="DockTabActiveIndicatorBrush" Color="#56759B" />
+      <SolidColorBrush x:Key="DockTabForegroundBrush" Color="#6B7076" />
+      <SolidColorBrush x:Key="DockTabSelectedForegroundBrush" Color="#1F2327" />
+      <SolidColorBrush x:Key="DockTabActiveForegroundBrush" Color="#1F2327" />
+      <SolidColorBrush x:Key="DockTabCloseHoverBackgroundBrush" Color="#F6E3E1" />
+      <SolidColorBrush x:Key="DockTargetIndicatorBrush" Color="#6656759B" />
+      <SolidColorBrush x:Key="DockChromeButtonForegroundBrush" Color="#9CA1A7" />
+      <SolidColorBrush x:Key="DockChromeButtonHoverBackgroundBrush" Color="#E8E9E6" />
+      <SolidColorBrush x:Key="DockChromeButtonPressedBackgroundBrush" Color="#DCE2E9" />
+      <SolidColorBrush x:Key="DockChromeButtonDangerHoverBrush" Color="#F6E3E1" />
+      <SolidColorBrush x:Key="DockChromeGripBrush" Color="#00000000" />
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="WorkbenchBrush" Color="#1A1C1F" />
+      <SolidColorBrush x:Key="SurfaceBrush" Color="#212428" />
+      <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#282C31" />
+      <SolidColorBrush x:Key="CanvasBrush" Color="#1D2023" />
+      <SolidColorBrush x:Key="CanvasGridBrush" Color="#2A2E33" />
+      <SolidColorBrush x:Key="HeaderBrush" Color="#25282C" />
+      <SolidColorBrush x:Key="BorderBrush" Color="#363A40" />
+      <SolidColorBrush x:Key="BorderStrongBrush" Color="#4A4F56" />
+      <SolidColorBrush x:Key="TextBrush" Color="#E2E4E7" />
+      <SolidColorBrush x:Key="TextMutedBrush" Color="#A1A7AE" />
+      <SolidColorBrush x:Key="TextFaintBrush" Color="#6E747B" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#6F8FB6" />
+      <SolidColorBrush x:Key="AccentHoverBrush" Color="#82A1C6" />
+      <SolidColorBrush x:Key="AccentSoftBrush" Color="#2C3947" />
+      <SolidColorBrush x:Key="AccentTextBrush" Color="#A7C0DF" />
+      <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="SelectionBrush" Color="#2E3743" />
+      <SolidColorBrush x:Key="HoverBrush" Color="#2B2F34" />
+      <SolidColorBrush x:Key="ErrorBrush" Color="#F08A83" />
+      <SolidColorBrush x:Key="ErrorSoftBrush" Color="#3A2624" />
+      <SolidColorBrush x:Key="WarningBrush" Color="#E0B458" />
+      <SolidColorBrush x:Key="OverlayBrush" Color="#99000000" />
+
+      <SolidColorBrush x:Key="MaturityImplemented" Color="#7C9CC4" />
+      <SolidColorBrush x:Key="MaturityInProgress" Color="#D9AA45" />
+      <SolidColorBrush x:Key="MaturityWrittenAhead" Color="#4F6F92" />
+      <SolidColorBrush x:Key="MaturityPlanned" Color="#5A6068" />
+      <SolidColorBrush x:Key="MaturityNone" Color="#3F444A" />
+
+      <Color x:Key="SyntaxKeyword">#8FB0D8</Color>
+      <Color x:Key="SyntaxComment">#7D8A82</Color>
+      <Color x:Key="SyntaxString">#D9A06A</Color>
+      <Color x:Key="SyntaxNumber">#C39BDD</Color>
+      <Color x:Key="SyntaxMetadata">#86C3A0</Color>
+
+      <SolidColorBrush x:Key="DockSurfaceWorkbenchBrush" Color="#1A1C1F" />
+      <SolidColorBrush x:Key="DockSurfaceSidebarBrush" Color="#212428" />
+      <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="#1D2023" />
+      <SolidColorBrush x:Key="DockSurfacePanelBrush" Color="#212428" />
+      <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="#25282C" />
+      <SolidColorBrush x:Key="DockSurfaceHeaderActiveBrush" Color="#25282C" />
+      <SolidColorBrush x:Key="DockBorderSubtleBrush" Color="#363A40" />
+      <SolidColorBrush x:Key="DockBorderStrongBrush" Color="#4A4F56" />
+      <SolidColorBrush x:Key="DockSeparatorBrush" Color="#363A40" />
+      <SolidColorBrush x:Key="DockSplitterIdleBrush" Color="#363A40" />
+      <SolidColorBrush x:Key="DockSplitterHoverBrush" Color="#4F6F92" />
+      <SolidColorBrush x:Key="DockSplitterDragBrush" Color="#6F8FB6" />
+      <SolidColorBrush x:Key="DockTabBackgroundBrush" Color="#00000000" />
+      <SolidColorBrush x:Key="DockTabHoverBackgroundBrush" Color="#2B2F34" />
+      <SolidColorBrush x:Key="DockTabActiveBackgroundBrush" Color="#1D2023" />
+      <SolidColorBrush x:Key="DockTabActiveIndicatorBrush" Color="#6F8FB6" />
+      <SolidColorBrush x:Key="DockTabForegroundBrush" Color="#A1A7AE" />
+      <SolidColorBrush x:Key="DockTabSelectedForegroundBrush" Color="#E2E4E7" />
+      <SolidColorBrush x:Key="DockTabActiveForegroundBrush" Color="#E2E4E7" />
+      <SolidColorBrush x:Key="DockTabCloseHoverBackgroundBrush" Color="#3A2624" />
+      <SolidColorBrush x:Key="DockTargetIndicatorBrush" Color="#666F8FB6" />
+      <SolidColorBrush x:Key="DockChromeButtonForegroundBrush" Color="#6E747B" />
+      <SolidColorBrush x:Key="DockChromeButtonHoverBackgroundBrush" Color="#2B2F34" />
+      <SolidColorBrush x:Key="DockChromeButtonPressedBackgroundBrush" Color="#2E3743" />
+      <SolidColorBrush x:Key="DockChromeButtonDangerHoverBrush" Color="#3A2624" />
+      <SolidColorBrush x:Key="DockChromeGripBrush" Color="#00000000" />
+    </ResourceDictionary>
+
+  </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>

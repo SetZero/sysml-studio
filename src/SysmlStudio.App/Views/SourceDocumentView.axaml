@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+             xmlns:edit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             x:Class="SysmlStudio.App.Views.SourceDocumentView"
+             x:DataType="vm:SourceDocumentViewModel">
+  <DockPanel Background="{DynamicResource CanvasBrush}">
+
+    <!-- What file this is -->
+    <Border DockPanel.Dock="Top" Padding="14,7" Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding HeaderLine}" Classes="mono muted" FontSize="12" />
+        <TextBlock Grid.Column="1" Text="AvaloniaEdit  ·  debounced re-parse 250 ms" Classes="mono faint" FontSize="12" />
+      </Grid>
+    </Border>
+
+    <!-- The first error, when there is one -->
+    <Border DockPanel.Dock="Bottom" Padding="14,9" Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+            IsVisible="{Binding HasErrors}">
+      <Grid ColumnDefinitions="Auto,*">
+        <Border BorderBrush="{DynamicResource ErrorBrush}" BorderThickness="1" Padding="7,2"
+                VerticalAlignment="Top" Margin="0,1,12,0">
+          <TextBlock Text="ERROR" Classes="mono error" FontSize="10.5" LetterSpacing="1.2" />
+        </Border>
+        <StackPanel Grid.Column="1" Spacing="2">
+          <TextBlock Classes="mono" FontSize="12.5" TextTrimming="CharacterEllipsis">
+            <Run Text="{Binding Title}" /><Run Text="(" /><Run Text="{Binding FirstError.Line}" /><Run Text="," /><Run Text="{Binding FirstError.Column}" /><Run Text="): " /><Run Text="{Binding FirstError.Message}" />
+          </TextBlock>
+          <TextBlock Classes="mono faint" FontSize="11.5"
+                     Text="ANTLR SysMLv2Parser  ·  the model keeps the last saved version until the file parses" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <edit:TextEditor x:Name="Editor"
+                     Document="{Binding Text}"
+                     ShowLineNumbers="True"
+                     FontFamily="{DynamicResource MonoFont}"
+                     FontSize="13.5"
+                     Padding="6,6,0,0"
+                     Background="{DynamicResource CanvasBrush}"
+                     Foreground="{DynamicResource TextBrush}"
+                     LineNumbersForeground="{DynamicResource TextFaintBrush}"
+                     HorizontalScrollBarVisibility="Auto"
+                     VerticalScrollBarVisibility="Auto" />
+  </DockPanel>
+</UserControl>

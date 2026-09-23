@@ -15,11 +15,13 @@ public sealed class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var viewModel = new MainViewModel();
-            if (Program.StartupFolder is { Length: > 0 } folder && Directory.Exists(folder))
-                viewModel.Open(folder);
+            var shell = new ShellViewModel();
+            var window = new MainWindow { DataContext = shell };
+            shell.Attach(window);
+            desktop.MainWindow = window;
 
-            desktop.MainWindow = new MainWindow { DataContext = viewModel };
+            if (Program.StartupFolder is { Length: > 0 } folder && Directory.Exists(folder))
+                shell.Open(folder);
         }
 
         base.OnFrameworkInitializationCompleted();

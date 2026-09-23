@@ -43,6 +43,15 @@ public static class FitToScreen
         if (extent.Width > 0 && extent.Height > 0 && editor.Bounds.Width > 0)
         {
             editor.FitToScreen(null);
+
+            // A small diagram fitted to a big canvas would be drawn at 300 per cent.
+            // Nothing is shown larger than life: it is centred at 100 instead.
+            if (editor.ViewportZoom > 1)
+            {
+                editor.ViewportZoom = 1;
+                editor.BringIntoView(extent.Center);
+            }
+
             return;
         }
 

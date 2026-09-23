@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+             x:Class="SysmlStudio.App.Views.BottomPanelView"
+             x:DataType="vm:BottomPanelViewModel"
+             Background="{DynamicResource SurfaceBrush}">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.th">
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="LetterSpacing" Value="1.5" />
+      <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFaintBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel>
+    <!-- Tabs -->
+    <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal">
+          <RadioButton Classes="tab panel-tab" GroupName="bottom" IsChecked="{Binding ShowsProblems}">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+              <TextBlock Text="Problems" />
+              <TextBlock Text="{Binding ErrorCount}" Classes="error" />
+              <TextBlock Text="{Binding WarningCount}" Classes="warning" />
+            </StackPanel>
+          </RadioButton>
+          <RadioButton Classes="tab panel-tab" GroupName="bottom" IsChecked="{Binding ShowsUsages}">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+              <TextBlock Text="Find usages" />
+              <TextBlock Text="{Binding Usages.Count}" />
+            </StackPanel>
+          </RadioButton>
+          <RadioButton Classes="tab panel-tab" GroupName="bottom" IsChecked="{Binding ShowsOutput}" Content="Output" />
+        </StackPanel>
+        <TextBlock Grid.Column="2" Text="{Binding Hint}" Classes="mono faint" FontSize="12"
+                   VerticalAlignment="Center" Margin="0,0,14,0" />
+      </Grid>
+    </Border>
+
+    <Panel>
+      <!-- Problems -->
+      <DockPanel IsVisible="{Binding ShowsProblems}">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="100,220,90,*" Margin="12,8,12,4">
+          <TextBlock Classes="th" Text="SEVERITY" />
+          <TextBlock Grid.Column="1" Classes="th" Text="FILE" />
+          <TextBlock Grid.Column="2" Classes="th" Text="LN:COL" />
+          <TextBlock Grid.Column="3" Classes="th" Text="MESSAGE" />
+        </Grid>
+        <ListBox Classes="table" ItemsSource="{Binding Problems}" SelectionChanged="OnProblemSelected">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ProblemRow">
+              <Grid ColumnDefinitions="100,220,90,*">
+                <TextBlock Text="{Binding Severity}" Classes="mono" Classes.error="{Binding IsError}" Classes.warning="{Binding !IsError}" />
+                <TextBlock Grid.Column="1" Text="{Binding File}" Classes="mono" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="2" Text="{Binding Position}" Classes="mono" />
+                <TextBlock Grid.Column="3" Text="{Binding Message}" Classes="mono" TextTrimming="CharacterEllipsis" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <!-- Usages -->
+      <DockPanel IsVisible="{Binding ShowsUsages}">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="100,220,90,*" Margin="12,8,12,4">
+          <TextBlock Classes="th" Text="USAGE" />
+          <TextBlock Grid.Column="1" Classes="th" Text="FILE" />
+          <TextBlock Grid.Column="2" Classes="th" Text="LN:COL" />
+          <TextBlock Grid.Column="3" Classes="th" Text="SNIPPET" />
+        </Grid>
+        <ListBox Classes="table" ItemsSource="{Binding Usages}" SelectionChanged="OnUsageSelected">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:UsageRow">
+              <Grid ColumnDefinitions="100,220,90,*">
+                <TextBlock Text="{Binding Usage}" Classes="mono muted" />
+                <TextBlock Grid.Column="1" Text="{Binding File}" Classes="mono" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="2" Text="{Binding Position}" Classes="mono" />
+                <TextBlock Grid.Column="3" Text="{Binding Snippet}" Classes="mono" TextTrimming="CharacterEllipsis" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <!-- Output -->
+      <ListBox Classes="table" ItemsSource="{Binding Output}" IsVisible="{Binding ShowsOutput}">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Text="{Binding}" Classes="mono muted" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Panel>
+  </DockPanel>
+</UserControl>

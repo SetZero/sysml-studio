@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+             xmlns:views="clr-namespace:SysmlStudio.App.Views"
+             x:Class="SysmlStudio.App.Views.ProjectBrowserView"
+             x:DataType="vm:BrowserViewModel"
+             Background="{DynamicResource SurfaceBrush}">
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Padding="10,10,10,8"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+      <TextBox Classes="field" Text="{Binding Filter}" PlaceholderText="/  Filter elements…" />
+    </Border>
+
+    <Panel>
+      <StackPanel Margin="14,16" Spacing="4" IsVisible="{Binding !HasWorkspace}">
+        <TextBlock Text="No workspace." Classes="muted" FontSize="13.5" />
+        <TextBlock Text="Open a folder of .sysml files to index it." Classes="muted" FontSize="13.5" TextWrapping="Wrap" />
+      </StackPanel>
+
+      <TreeView ItemsSource="{Binding Roots}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+                Background="Transparent" Padding="0,4" IsVisible="{Binding HasWorkspace}">
+        <TreeView.Styles>
+          <Style Selector="TreeViewItem" x:DataType="vm:ElementViewModel">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+          </Style>
+        </TreeView.Styles>
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:ElementViewModel">
+            <StackPanel Orientation="Horizontal" Spacing="7" Height="26">
+              <!-- The maturity bar: solid for what carries a keyword, absent otherwise. -->
+              <Border Width="3" Height="17" VerticalAlignment="Center"
+                      views:MaturityPaint.Background="{Binding Maturity}"
+                      IsVisible="{Binding HasMaturity}" />
+              <TextBlock Text="{Binding Kind}" Classes="mono faint" FontSize="12" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding Label}" FontSize="14.5" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding ShortName}" Classes="mono faint" FontSize="11" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding Tag}" Classes="mono faint" FontSize="11" VerticalAlignment="Center" />
+            </StackPanel>
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+    </Panel>
+  </DockPanel>
+</UserControl>

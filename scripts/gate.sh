@@ -29,6 +29,7 @@ run test dotnet test SysmlStudio.slnx --no-build --nologo
 # 4. The real model, when a Ferrix checkout is beside this one: every file
 #    parses and every element lands somewhere in the text.
 model="${SYSML_STUDIO_MODEL:-../os/docs/sysml}"
+run sample dotnet run --project tools/ParseCheck --no-build -- samples/vehicle
 if [ -d "$model" ]; then
     run model dotnet run --project tools/ParseCheck --no-build -- "$model"
 else

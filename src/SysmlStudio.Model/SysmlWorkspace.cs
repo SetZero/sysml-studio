@@ -2,6 +2,16 @@ using SysmlStudio.Syntax;
 
 namespace SysmlStudio.Model;
 
+/// <summary>How much a diagnostic matters.</summary>
+public enum Severity
+{
+    Error,
+    Warning,
+}
+
+/// <summary>One problem in the model, placed where the text says it is.</summary>
+public sealed record Diagnostic(Severity Severity, string File, int Line, int Column, string Message);
+
 /// <summary>
 /// A folder of .sysml files read as one model. The files stay the source of
 /// truth: the workspace holds their text and parse trees, and the element tree
@@ -29,6 +39,9 @@ public sealed class SysmlWorkspace
     /// <summary>Every reference that did not resolve, as a message per relation.</summary>
     public IReadOnlyList<string> UnresolvedReferences { get; private set; } = [];
 
+    /// <summary>Syntax errors and unresolved references together, in file order.</summary>
+    public IReadOnlyList<Diagnostic> Diagnostics { get; private set; } = [];
+
     public static SysmlWorkspace Load(string directory, string pattern = "*.sysml")
     {
         var workspace = new SysmlWorkspace(directory);
@@ -49,6 +62,10 @@ public sealed class SysmlWorkspace
 
     public SourceFile this[string path] => _files[path];
 
+    /// <summary>The file's path relative to the workspace folder, with forward slashes.</summary>
+    public string RelativePath(string path)
+        => Path.GetRelativePath(Directory, path).Replace('\\', '/');
+
     /// <summary>Rebuilds the element tree from the current parse trees.</summary>
     public void Reindex()
     {
@@ -65,6 +82,10 @@ public sealed class SysmlWorkspace
 
     public Element? Find(string qualifiedName)
         => Elements.FirstOrDefault(e => e.QualifiedName == qualifiedName);
+
+    /// <summary>Every relation in the model that points at <paramref name="element"/>.</summary>
+    public IEnumerable<Relation> Usages(Element element)
+        => Elements.SelectMany(e => e.Relations).Where(r => ReferenceEquals(r.Target, element));
 
     /// <summary>
     /// Points every relation at the element it names. Resolution is lexical:
@@ -85,6 +106,10 @@ public sealed class SysmlWorkspace
         }
 
         var unresolved = new List<string>();
+        var diagnostics = Errors
+            .Select(e => new Diagnostic(Severity.Error, e.File, e.Line, e.Column + 1, e.Message))
+            .ToList();
+
         foreach (var element in Elements)
         {
             foreach (var relation in element.Relations)
@@ -93,12 +118,48 @@ public sealed class SysmlWorkspace
                     continue;
 
                 relation.Target = Lookup(relation.TargetReference, element, byQualifiedName, byShortName);
-                if (relation.Target is null)
-                    unresolved.Add($"{element.File?.Path}:{element.Line}: cannot resolve '{relation.TargetReference}'");
+                if (relation.Target is not null || MayComeFromOutside(relation.TargetReference, element, byQualifiedName))
+                    continue;
+
+                unresolved.Add($"{element.File?.Path}:{element.Line}: cannot resolve '{relation.TargetReference}'");
+                diagnostics.Add(new Diagnostic(Severity.Warning, element.File?.Path ?? string.Empty,
+                    element.Line, element.Context.Start.Column + 1,
+                    $"unresolved reference '{relation.TargetReference}'"));
             }
         }
 
         UnresolvedReferences = unresolved;
+        Diagnostics = [.. diagnostics
+            .OrderBy(d => d.Severity)
+            .ThenBy(d => d.File, StringComparer.Ordinal)
+            .ThenBy(d => d.Line)];
+    }
+
+    /// <summary>
+    /// Whether a scope around <paramref name="from"/> imports a package this
+    /// folder does not hold — the standard library's ScalarValues, say. A name
+    /// that does not resolve there most likely comes from that package, and
+    /// calling it a problem would bury the real ones under hundreds of false ones.
+    /// </summary>
+    private static bool MayComeFromOutside(string reference, Element from, Dictionary<string, Element> byQualifiedName)
+    {
+        // "FerrixBoot::Missing" names a package this folder holds: no excuse.
+        var head = Normalize(reference).Split("::")[0];
+        if (reference.Contains("::", StringComparison.Ordinal) && byQualifiedName.ContainsKey(head))
+            return false;
+
+        for (var scope = from; scope is not null; scope = scope.Parent)
+        {
+            foreach (var import in scope.Relations.Where(r => r.Kind == RelationKind.Import))
+            {
+                var imported = import.TargetReference.Trim();
+                var package = imported.Split("::")[0].Trim();
+                if (package.Length > 0 && !byQualifiedName.ContainsKey(package))
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     private static Element? Lookup(string reference, Element from,

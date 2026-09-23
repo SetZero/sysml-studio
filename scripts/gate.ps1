@@ -21,6 +21,7 @@ Invoke-Gate test   { dotnet test SysmlStudio.slnx --no-build --nologo }
 
 $model = $env:SYSML_STUDIO_MODEL
 if (-not $model) { $model = "..\os\docs\sysml" }
+Invoke-Gate sample { dotnet run --project tools/ParseCheck --no-build -- samples/vehicle }
 if (Test-Path $model) {
     Invoke-Gate model { dotnet run --project tools/ParseCheck --no-build -- $model }
 } else {

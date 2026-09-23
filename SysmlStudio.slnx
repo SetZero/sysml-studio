@@ -6,6 +6,7 @@
     <Project Path="src/SysmlStudio.Syntax/SysmlStudio.Syntax.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/SysmlStudio.App.Tests/SysmlStudio.App.Tests.csproj" />
     <Project Path="tests/SysmlStudio.Tests/SysmlStudio.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

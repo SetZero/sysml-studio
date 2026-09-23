@@ -7,6 +7,7 @@ package SampleLifecycle {
 }
 
 package Sample {
+    private import ScalarValues::*;
     private import SampleLifecycle::*;
 
     part def <'P.1'> Engine {
@@ -48,5 +49,12 @@ package Sample {
             first off
             then on;
         state on;
+    }
+}
+
+package Broken {
+    private import Sample::*;
+    part def UsesMissing {
+        part x : Sample::NoSuchThing;
     }
 }

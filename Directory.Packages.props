@@ -19,6 +19,8 @@
     <PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
     <PackageVersion Include="Dock.Avalonia" Version="12.1.0.6" />
     <PackageVersion Include="Dock.Model.Mvvm" Version="12.1.0.6" />
+    <PackageVersion Include="Dock.Avalonia.Themes.Fluent" Version="12.1.0.6" />
+    <PackageVersion Include="FluentIcons.Avalonia" Version="2.1.341" />
     <PackageVersion Include="Nodify.Avalonia" Version="2.0.0" />
     <PackageVersion Include="bodong.Avalonia.PropertyGrid" Version="12.1.1.1" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -30,7 +32,10 @@
     <!-- Tests. -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageVersion Include="xunit" Version="2.9.2" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="Xunit.SkippableFact" Version="1.5.23" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Skia" Version="12.1.2" />
   </ItemGroup>
 </Project>

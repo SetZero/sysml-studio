@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+             xmlns:ic="using:FluentIcons.Avalonia"
+             x:Class="SysmlStudio.App.Views.RibbonView"
+             x:DataType="vm:ShellViewModel">
+  <StackPanel Orientation="Horizontal" Height="108">
+    <Border Classes="group" BorderThickness="0">
+      <Grid RowDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <ToggleButton Classes="flat ribbon-large" IsChecked="{Binding IsDark}">
+            <StackPanel><ic:SymbolIcon Symbol="WeatherMoon" /><TextBlock Classes="label" Text="Dark theme" /></StackPanel>
+          </ToggleButton>
+          <Button Classes="flat ribbon-large" Command="{Binding ToggleRibbonCommand}">
+            <StackPanel><ic:SymbolIcon Symbol="ChevronUp" /><TextBlock Classes="label" Text="Collapse ribbon" /></StackPanel>
+          </Button>
+        </StackPanel>
+        <TextBlock Grid.Row="1" Classes="caption" Text="WINDOW" HorizontalAlignment="Center" />
+      </Grid>
+    </Border>
+  </StackPanel>
+</UserControl>

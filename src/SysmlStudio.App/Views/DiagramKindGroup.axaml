@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+             xmlns:views="clr-namespace:SysmlStudio.App.Views"
+             xmlns:diag="clr-namespace:SysmlStudio.Diagrams;assembly=SysmlStudio.Diagrams"
+             xmlns:ic="using:FluentIcons.Avalonia"
+             x:Class="SysmlStudio.App.Views.DiagramKindGroup"
+             x:DataType="vm:ShellViewModel">
+  <!-- A button per kind of diagram, enabled for the kinds the selected element
+       can be drawn as, lit for the kind of the diagram in front. -->
+  <Border Classes="group">
+    <Grid RowDefinitions="*,Auto">
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button Classes="flat ribbon-large" Command="{Binding OpenDiagramCommand}" CommandParameter="{x:Static diag:DiagramKind.Definition}"
+                Classes.active="{Binding ActiveKind, Converter={x:Static views:EqualsConverter.Instance}, ConverterParameter={x:Static diag:DiagramKind.Definition}}"
+                ToolTip.Tip="Definitions, their features and specializations">
+          <StackPanel><ic:SymbolIcon Symbol="LayoutCellFour" /><TextBlock Classes="label" Text="Definition" /></StackPanel>
+        </Button>
+        <Button Classes="flat ribbon-large" Command="{Binding OpenDiagramCommand}" CommandParameter="{x:Static diag:DiagramKind.Interconnection}"
+                Classes.active="{Binding ActiveKind, Converter={x:Static views:EqualsConverter.Instance}, ConverterParameter={x:Static diag:DiagramKind.Interconnection}}"
+                ToolTip.Tip="Parts inside a definition and how they connect">
+          <StackPanel><ic:SymbolIcon Symbol="Connector" /><TextBlock Classes="label" Text="Inter connection" /></StackPanel>
+        </Button>
+        <Button Classes="flat ribbon-large" Command="{Binding OpenDiagramCommand}" CommandParameter="{x:Static diag:DiagramKind.Requirements}"
+                Classes.active="{Binding ActiveKind, Converter={x:Static views:EqualsConverter.Instance}, ConverterParameter={x:Static diag:DiagramKind.Requirements}}"
+                ToolTip.Tip="Requirements and what satisfies, verifies or is allocated to them">
+          <StackPanel><ic:SymbolIcon Symbol="ClipboardCheckmark" /><TextBlock Classes="label" Text="Require ments" /></StackPanel>
+        </Button>
+        <Button Classes="flat ribbon-large" Command="{Binding OpenDiagramCommand}" CommandParameter="{x:Static diag:DiagramKind.ActionFlow}"
+                Classes.active="{Binding ActiveKind, Converter={x:Static views:EqualsConverter.Instance}, ConverterParameter={x:Static diag:DiagramKind.ActionFlow}}"
+                ToolTip.Tip="An action's steps in succession order">
+          <StackPanel><ic:SymbolIcon Symbol="BranchFork" /><TextBlock Classes="label" Text="Action flow" /></StackPanel>
+        </Button>
+        <Button Classes="flat ribbon-large" Command="{Binding OpenDiagramCommand}" CommandParameter="{x:Static diag:DiagramKind.StateMachine}"
+                Classes.active="{Binding ActiveKind, Converter={x:Static views:EqualsConverter.Instance}, ConverterParameter={x:Static diag:DiagramKind.StateMachine}}"
+                ToolTip.Tip="A state definition's states and transitions">
+          <StackPanel><ic:SymbolIcon Symbol="ArrowSync" /><TextBlock Classes="label" Text="State machine" /></StackPanel>
+        </Button>
+      </StackPanel>
+      <TextBlock Grid.Row="1" Classes="caption" Text="DIAGRAM KIND" HorizontalAlignment="Center" />
+    </Grid>
+  </Border>
+</UserControl>

@@ -16,8 +16,8 @@ actually changed.
 | `SysmlStudio.Syntax` — parse SysML v2 text, keep tokens and comments | works |
 | `SysmlStudio.Model` — element tree, relations, name resolution | works |
 | `SysmlStudio.Diagrams` — the five diagram kinds, MSAGL layout | works |
-| `SysmlStudio.App` — the Avalonia application | browses and draws; read-only |
-| `SysmlStudio.Editing` — graphical edits as text patches | not started |
+| `SysmlStudio.App` — the Avalonia application | ribbon, dockable panes, five diagram kinds, source tabs you can edit and save, problems and usages |
+| `SysmlStudio.Editing` — graphical edits as text patches | not started: the ribbon's rename/add/delete and the toolbox are there, disabled |
 
 Open a model folder:
 
@@ -25,9 +25,12 @@ Open a model folder:
 dotnet run --project src/SysmlStudio.App -- ../os/docs/sysml
 ```
 
-The browser lists every package and element with its maturity colour; select
-one and the buttons above the canvas offer the diagrams that can be drawn of
-it. Nothing writes to the model yet.
+The project browser lists every package and element with its maturity bar;
+select one and the ribbon's Diagram kind group lights the diagrams that can be
+drawn of it. A source tab edits the file as text, re-parses a quarter of a
+second after typing stops, and writes it back on Save. Graphical editing is
+the next milestone. With no folder given, the Start page offers the sample
+model in `samples/vehicle`.
 
 What the model holds can also be printed without the window:
 
@@ -45,7 +48,8 @@ Nothing here reimplements what a library already does.
 | Lossless edits | ANTLR's `TokenStreamRewriter` over the token stream |
 | Model interchange | [`SysML2.NET`](https://github.com/STARIONGROUP/SysML2.NET) for JSON/XMI export |
 | Graph layout | [MSAGL](https://github.com/microsoft/automatic-graph-layout) |
-| UI | [Avalonia](https://avaloniaui.net), `Dock.Avalonia`, `Nodify.Avalonia`, `AvaloniaEdit` |
+| UI | [Avalonia](https://avaloniaui.net) 12, `Dock.Avalonia` (panes), `Nodify.Avalonia` (canvas), `AvaloniaEdit` (source), `FluentIcons.Avalonia` |
+| Type | IBM Plex Sans Condensed and IBM Plex Mono, bundled under the SIL Open Font Licence (`src/SysmlStudio.App/Assets/Fonts/OFL.txt`) |
 
 ## Building
 
@@ -70,7 +74,8 @@ scripts/gate.sh format   # one gate by name
 |---|---|
 | `format` | `dotnet format --verify-no-changes --severity info`: whitespace, using order and the code style `.editorconfig` fixes |
 | `build` | the build with the .NET analyzers, Roslynator and SonarAnalyzer on and **every warning an error** |
-| `test` | the xUnit suite |
+| `test` | the xUnit suites, including a headless run of the real window: every diagram kind, a source tab with an error, the dark theme. `SYSML_STUDIO_SHOTS=<folder>` saves what each test rendered |
+| `sample` | the sample model parses |
 | `model` | loads a real model — `$SYSML_STUDIO_MODEL`, or `../os/docs/sysml` when that checkout is beside this one — and fails if a file does not parse |
 
 Judge a gate by its exit status, not by its last line. `scripts/gate.sh` stops

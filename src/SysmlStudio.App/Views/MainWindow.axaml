@@ -1,199 +1,124 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
-        xmlns:conv="clr-namespace:SysmlStudio.App.Views"
-        xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
-        xmlns:nodifyc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
-        xmlns:edit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+        xmlns:views="clr-namespace:SysmlStudio.App.Views"
+        xmlns:ic="using:FluentIcons.Avalonia"
         x:Class="SysmlStudio.App.Views.MainWindow"
-        x:DataType="vm:MainViewModel"
+        x:DataType="vm:ShellViewModel"
         Title="SysML Studio"
-        Width="1400" Height="900">
+        Width="1600" Height="980"
+        MinWidth="900" MinHeight="600"
+        Background="{DynamicResource WorkbenchBrush}"
+        FontFamily="{DynamicResource UiFont}">
 
-  <Window.Resources>
-    <conv:MaturityBrushConverter x:Key="MaturityBrush" />
-  </Window.Resources>
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenFolderCommand}" />
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAllCommand}" />
+    <KeyBinding Gesture="Shift+F12" Command="{Binding FindUsagesCommand}" />
+    <KeyBinding Gesture="Ctrl+D0" Command="{Binding FitCommand}" />
+  </Window.KeyBindings>
 
-  <!-- How each relation is drawn, UML's way: a straight line with a filled
-       head by default, a hollow triangle for specialization, a dashed line
-       with an open head for the trace relations. -->
-  <Window.Styles>
-    <Style Selector="TabControl > TabItem">
-      <Setter Property="FontSize" Value="13" />
-      <Setter Property="MinHeight" Value="32" />
-      <Setter Property="Padding" Value="12,4" />
-    </Style>
-    <Style Selector="nodifyc|LineConnection">
-      <Setter Property="Stroke" Value="#90A4AE" />
-      <Setter Property="Fill" Value="#90A4AE" />
-      <Setter Property="StrokeThickness" Value="1.5" />
-      <Setter Property="ArrowEnds" Value="End" />
-      <Setter Property="ArrowShape" Value="Arrowhead" />
-      <Setter Property="ArrowSize" Value="10,8" />
-      <Setter Property="SourceOffsetMode" Value="Rectangle" />
-      <Setter Property="TargetOffsetMode" Value="Rectangle" />
-      <Setter Property="Spacing" Value="0" />
-      <Setter Property="FontSize" Value="11" />
-    </Style>
-    <Style Selector="nodifyc|LineConnection.generalization">
-      <Setter Property="Fill" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
-      <Setter Property="ArrowSize" Value="14,12" />
-    </Style>
-    <Style Selector="nodifyc|LineConnection.trace">
-      <Setter Property="StrokeDashArray" Value="6,4" />
-      <Setter Property="Fill" Value="Transparent" />
-    </Style>
-  </Window.Styles>
+  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
 
-  <DockPanel>
-
-    <!-- Commands -->
-    <Menu DockPanel.Dock="Top">
-      <MenuItem Header="_File">
-        <MenuItem Header="_Open Folder…" Click="OnOpenFolder" />
-        <MenuItem Header="_Save Layout" Command="{Binding SaveLayoutCommand}" />
-        <Separator />
-        <MenuItem Header="E_xit" Click="OnExit" />
-      </MenuItem>
-      <MenuItem Header="_Diagram">
-        <MenuItem Header="_Relayout" Command="{Binding RelayoutCommand}" />
-        <MenuItem Header="_Fit to Window" Click="OnFit" InputGesture="Ctrl+0" HotKey="Ctrl+0" />
-        <Separator />
-        <MenuItem Header="Export as _SVG…" Click="OnExportSvg" />
-        <MenuItem Header="Export as _PNG…" Click="OnExportPng" />
-      </MenuItem>
-    </Menu>
-
-    <!-- What the model looks like right now -->
-    <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="#33000000" Padding="8,4">
-      <TextBlock Text="{Binding Status}" FontSize="12" Opacity="0.8" />
+    <!-- ===== Title strip ===== -->
+    <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="14,0">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto" Height="42">
+        <TextBlock Grid.Column="0" Text="SYSML STUDIO" VerticalAlignment="Center"
+                   FontSize="15" LetterSpacing="2.2" FontWeight="Medium"
+                   Foreground="{DynamicResource AccentTextBrush}" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" Margin="18,0,0,0" VerticalAlignment="Center">
+          <Border Width="1" Height="20" Background="{DynamicResource BorderBrush}" Margin="0,0,12,0" />
+          <Button Classes="flat" Command="{Binding SaveCommand}" ToolTip.Tip="Save (Ctrl+S)">
+            <ic:SymbolIcon Symbol="Save" FontSize="16" />
+          </Button>
+          <Button Classes="flat" Command="{Binding UndoCommand}" ToolTip.Tip="Undo">
+            <ic:SymbolIcon Symbol="ArrowUndo" FontSize="16" />
+          </Button>
+          <Button Classes="flat" Command="{Binding RedoCommand}" ToolTip.Tip="Redo">
+            <ic:SymbolIcon Symbol="ArrowRedo" FontSize="16" />
+          </Button>
+        </StackPanel>
+        <TextBlock Grid.Column="2" Text="{Binding WindowTitle}" Classes="mono muted"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" />
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Classes="flat" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="Light / dark">
+            <ic:SymbolIcon Symbol="WeatherMoon" FontSize="16" />
+          </Button>
+          <AutoCompleteBox Width="300" Height="30"
+                           ItemsSource="{Binding SearchItems}"
+                           Text="{Binding SearchText, Mode=TwoWay}"
+                           FilterMode="ContainsOrdinal"
+                           PlaceholderText="Search elements"
+                           FontSize="13"
+                           MaxDropDownHeight="420" />
+        </StackPanel>
+      </Grid>
     </Border>
 
-    <Grid ColumnDefinitions="320,4,*,4,360">
-
-      <!-- The browser -->
-      <DockPanel Grid.Column="0">
-        <TextBlock DockPanel.Dock="Top" Text="Model" FontWeight="SemiBold" Margin="8,8,8,4" />
-        <TreeView ItemsSource="{Binding Roots}"
-                  SelectedItem="{Binding SelectedElement, Mode=TwoWay}">
-          <TreeView.ItemTemplate>
-            <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:ElementViewModel">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <Border Width="10" Height="10" CornerRadius="5" VerticalAlignment="Center"
-                        Background="{Binding Maturity, Converter={StaticResource MaturityBrush}}" />
-                <TextBlock Text="{Binding Label}" />
-                <TextBlock Text="{Binding Kind}" Opacity="0.5" FontSize="11" VerticalAlignment="Center" />
-              </StackPanel>
-            </TreeDataTemplate>
-          </TreeView.ItemTemplate>
-        </TreeView>
-      </DockPanel>
-
-      <GridSplitter Grid.Column="1" Background="Transparent" />
-
-      <!-- Diagrams -->
-      <DockPanel Grid.Column="2">
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="8">
-          <TextBlock Text="Open as:" VerticalAlignment="Center" />
-          <ItemsControl ItemsSource="{Binding AvailableDiagrams}">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <StackPanel Orientation="Horizontal" Spacing="6" />
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Button Content="{Binding}"
-                        Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).OpenDiagramCommand}"
-                        CommandParameter="{Binding}" />
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+    <!-- ===== Ribbon tabs ===== -->
+    <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" Padding="14,6,14,0">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button Classes="primary" Padding="18,7" FontWeight="Normal" FontSize="14" Content="File">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Open folder…" Command="{Binding OpenFolderCommand}" InputGesture="Ctrl+O" />
+                <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
+                <MenuItem Header="Save all" Command="{Binding SaveAllCommand}" InputGesture="Ctrl+Shift+S" />
+                <Separator />
+                <MenuItem Header="Export as SVG…" Command="{Binding ExportSvgCommand}" />
+                <MenuItem Header="Export as PNG…" Command="{Binding ExportPngCommand}" />
+                <Separator />
+                <MenuItem Header="Exit" Click="OnExit" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+          <RadioButton Classes="tab ribbon-tab" GroupName="ribbon" Content="Home" IsChecked="True" x:Name="HomeTab" />
+          <RadioButton Classes="tab ribbon-tab" GroupName="ribbon" Content="Diagram" x:Name="DiagramTab" />
+          <RadioButton Classes="tab ribbon-tab" GroupName="ribbon" Content="View" x:Name="ViewTab" />
         </StackPanel>
-
-        <TabControl ItemsSource="{Binding Documents}"
-                    SelectedItem="{Binding SelectedDocument, Mode=TwoWay}">
-          <TabControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:DiagramDocumentViewModel">
-              <TextBlock Text="{Binding Title}" />
-            </DataTemplate>
-          </TabControl.ItemTemplate>
-          <TabControl.ContentTemplate>
-            <DataTemplate x:DataType="vm:DiagramDocumentViewModel">
-              <nodify:NodifyEditor ItemsSource="{Binding Nodes}"
-                                   Connections="{Binding Connections}"
-                                   GridCellSize="16"
-                                   conv:FitToScreen.OnShow="True">
-                <nodify:NodifyEditor.ItemContainerTheme>
-                  <ControlTheme TargetType="nodify:ItemContainer"
-                                BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"
-                                x:DataType="vm:DiagramNodeViewModel">
-                    <Setter Property="Location" Value="{Binding Location, Mode=TwoWay}" />
-                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
-                  </ControlTheme>
-                </nodify:NodifyEditor.ItemContainerTheme>
-
-                <nodify:NodifyEditor.ItemTemplate>
-                  <DataTemplate x:DataType="vm:DiagramNodeViewModel">
-                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                            BorderBrush="{Binding Maturity, Converter={StaticResource MaturityBrush}}"
-                            BorderThickness="2" CornerRadius="4" Padding="8"
-                            Width="{Binding Width}" Height="{Binding Height}">
-                      <StackPanel Spacing="2">
-                        <TextBlock Text="{Binding Stereotype}" FontSize="11" Opacity="0.6" />
-                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                        <ItemsControl ItemsSource="{Binding Features}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                              <TextBlock Text="{Binding}" FontSize="11" Opacity="0.8" />
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </StackPanel>
-                    </Border>
-                  </DataTemplate>
-                </nodify:NodifyEditor.ItemTemplate>
-
-                <nodify:NodifyEditor.ConnectionTemplate>
-                  <DataTemplate x:DataType="vm:DiagramConnectionViewModel">
-                    <nodifyc:LineConnection Source="{Binding SourceAnchor}"
-                                           Target="{Binding TargetAnchor}"
-                                           SourceOffset="{Binding Source.HalfSize}"
-                                           TargetOffset="{Binding Target.HalfSize}"
-                                           Text="{Binding Label}"
-                                           Classes.generalization="{Binding IsGeneralization}"
-                                           Classes.trace="{Binding IsDashed}"
-                                           ToolTip.Tip="{Binding Description}" />
-                  </DataTemplate>
-                </nodify:NodifyEditor.ConnectionTemplate>
-              </nodify:NodifyEditor>
-            </DataTemplate>
-          </TabControl.ContentTemplate>
-        </TabControl>
-      </DockPanel>
-
-      <GridSplitter Grid.Column="3" Background="Transparent" />
-
-      <!-- The element as written, and the problems -->
-      <Grid Grid.Column="4" RowDefinitions="*,4,200">
-        <DockPanel Grid.Row="0">
-          <TextBlock DockPanel.Dock="Top" Text="Source" FontWeight="SemiBold" Margin="8,8,8,4" />
-          <edit:TextEditor Name="SourceEditor"
-                           Document="{Binding SourceText, Converter={x:Static conv:TextDocumentConverter.Instance}}"
-                           IsReadOnly="True"
-                           ShowLineNumbers="True"
-                           FontFamily="Cascadia Code,Consolas,Menlo,monospace"
-                           FontSize="12" />
-        </DockPanel>
-
-        <GridSplitter Grid.Row="1" Background="Transparent" />
-
-        <DockPanel Grid.Row="2">
-          <TextBlock DockPanel.Dock="Top" Text="Problems" FontWeight="SemiBold" Margin="8,8,8,4" />
-          <ListBox ItemsSource="{Binding Problems}" FontSize="11" />
-        </DockPanel>
+        <Button Grid.Column="2" Classes="flat" Command="{Binding ToggleRibbonCommand}" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <ic:SymbolIcon Symbol="ChevronUp" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="collapse" Classes="mono muted" FontSize="12" />
+          </StackPanel>
+        </Button>
       </Grid>
+    </Border>
 
-    </Grid>
-  </DockPanel>
+    <!-- ===== Ribbon body ===== -->
+    <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,1"
+            IsVisible="{Binding !IsRibbonCollapsed}">
+      <Panel>
+        <views:RibbonHome IsVisible="{Binding #HomeTab.IsChecked}" />
+        <views:RibbonDiagram IsVisible="{Binding #DiagramTab.IsChecked}" />
+        <views:RibbonView IsVisible="{Binding #ViewTab.IsChecked}" />
+      </Panel>
+    </Border>
+
+    <!-- ===== Panes ===== -->
+    <DockControl Grid.Row="3" Layout="{Binding Layout}" Margin="0" />
+
+    <!-- ===== Status bar ===== -->
+    <Border Grid.Row="4" Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,5">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="22">
+          <TextBlock Text="{Binding IndexedSummary}" Classes="mono muted" FontSize="12" />
+          <TextBlock Text="{Binding ErrorText}" Classes="mono error" FontSize="12" IsVisible="{Binding HasWorkspace}" />
+          <TextBlock Text="{Binding WarningText}" Classes="mono warning" FontSize="12" IsVisible="{Binding HasWorkspace}" />
+          <TextBlock Text="{Binding Caret}" Classes="mono muted" FontSize="12" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="22">
+          <TextBlock Text="{Binding SaveState}" Classes="mono muted" FontSize="12" />
+          <TextBlock Text="{x:Static vm:ShellViewModel.Runtime}" Classes="mono muted" FontSize="12" />
+          <TextBlock Text="{Binding Branch}" Classes="mono muted" FontSize="12" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+  </Grid>
 </Window>
