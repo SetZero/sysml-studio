@@ -14,6 +14,37 @@
     <conv:MaturityBrushConverter x:Key="MaturityBrush" />
   </Window.Resources>
 
+  <!-- How each relation is drawn, UML's way: a straight line with a filled
+       head by default, a hollow triangle for specialization, a dashed line
+       with an open head for the trace relations. -->
+  <Window.Styles>
+    <Style Selector="TabControl > TabItem">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="Padding" Value="12,4" />
+    </Style>
+    <Style Selector="nodifyc|LineConnection">
+      <Setter Property="Stroke" Value="#90A4AE" />
+      <Setter Property="Fill" Value="#90A4AE" />
+      <Setter Property="StrokeThickness" Value="1.5" />
+      <Setter Property="ArrowEnds" Value="End" />
+      <Setter Property="ArrowShape" Value="Arrowhead" />
+      <Setter Property="ArrowSize" Value="10,8" />
+      <Setter Property="SourceOffsetMode" Value="Rectangle" />
+      <Setter Property="TargetOffsetMode" Value="Rectangle" />
+      <Setter Property="Spacing" Value="0" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="nodifyc|LineConnection.generalization">
+      <Setter Property="Fill" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
+      <Setter Property="ArrowSize" Value="14,12" />
+    </Style>
+    <Style Selector="nodifyc|LineConnection.trace">
+      <Setter Property="StrokeDashArray" Value="6,4" />
+      <Setter Property="Fill" Value="Transparent" />
+    </Style>
+  </Window.Styles>
+
   <DockPanel>
 
     <!-- Commands -->
@@ -26,6 +57,7 @@
       </MenuItem>
       <MenuItem Header="_Diagram">
         <MenuItem Header="_Relayout" Command="{Binding RelayoutCommand}" />
+        <MenuItem Header="_Fit to Window" Click="OnFit" InputGesture="Ctrl+0" HotKey="Ctrl+0" />
         <Separator />
         <MenuItem Header="Export as _SVG…" Click="OnExportSvg" />
         <MenuItem Header="Export as _PNG…" Click="OnExportPng" />
@@ -90,7 +122,8 @@
             <DataTemplate x:DataType="vm:DiagramDocumentViewModel">
               <nodify:NodifyEditor ItemsSource="{Binding Nodes}"
                                    Connections="{Binding Connections}"
-                                   GridCellSize="16">
+                                   GridCellSize="16"
+                                   conv:FitToScreen.OnShow="True">
                 <nodify:NodifyEditor.ItemContainerTheme>
                   <ControlTheme TargetType="nodify:ItemContainer"
                                 BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"
@@ -105,10 +138,10 @@
                     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             BorderBrush="{Binding Maturity, Converter={StaticResource MaturityBrush}}"
                             BorderThickness="2" CornerRadius="4" Padding="8"
-                            MinWidth="{Binding Width}">
+                            Width="{Binding Width}" Height="{Binding Height}">
                       <StackPanel Spacing="2">
                         <TextBlock Text="{Binding Stereotype}" FontSize="11" Opacity="0.6" />
-                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                         <ItemsControl ItemsSource="{Binding Features}">
                           <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -123,10 +156,14 @@
 
                 <nodify:NodifyEditor.ConnectionTemplate>
                   <DataTemplate x:DataType="vm:DiagramConnectionViewModel">
-                    <nodifyc:Connection Source="{Binding SourceAnchor}"
-                                       Target="{Binding TargetAnchor}"
-                                       Text="{Binding Label}"
-                                       ToolTip.Tip="{Binding Description}" />
+                    <nodifyc:LineConnection Source="{Binding SourceAnchor}"
+                                           Target="{Binding TargetAnchor}"
+                                           SourceOffset="{Binding Source.HalfSize}"
+                                           TargetOffset="{Binding Target.HalfSize}"
+                                           Text="{Binding Label}"
+                                           Classes.generalization="{Binding IsGeneralization}"
+                                           Classes.trace="{Binding IsDashed}"
+                                           ToolTip.Tip="{Binding Description}" />
                   </DataTemplate>
                 </nodify:NodifyEditor.ConnectionTemplate>
               </nodify:NodifyEditor>

@@ -27,8 +27,14 @@ public sealed partial class DiagramNodeViewModel(DiagramNode node) : ObservableO
     /// <summary>What the maturity keyword paints: one meaning, one colour.</summary>
     public string Maturity => _node.Maturity ?? "none";
 
-    /// <summary>Where a connection meets this node: its centre.</summary>
+    /// <summary>Where a connection aims: the node's centre.</summary>
     public Point Anchor => new(Location.X + (Width / 2), Location.Y + (Height / 2));
+
+    /// <summary>
+    /// Half the node's size. A connection aims at the centre and is cut back
+    /// by this much at the node's rectangle, so arrowheads land on the border.
+    /// </summary>
+    public Size HalfSize => new(Width / 2, Height / 2);
 
     partial void OnLocationChanged(Point value)
     {
@@ -69,6 +75,9 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
     /// <summary>Trace relations are drawn dashed, the way UML draws a dependency.</summary>
     public bool IsDashed => Kind is RelationKind.Satisfy or RelationKind.Verify
         or RelationKind.Allocate or RelationKind.Dependency or RelationKind.Typing;
+
+    /// <summary>Specialization and redefinition get UML's hollow triangle.</summary>
+    public bool IsGeneralization => Kind is RelationKind.Specialization or RelationKind.Redefinition;
 
     public void Dispose()
     {

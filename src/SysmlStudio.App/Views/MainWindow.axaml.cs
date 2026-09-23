@@ -33,6 +33,12 @@ public sealed partial class MainWindow : Window
 
     private void OnExit(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => Close();
 
+    private void OnFit(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (this.FindDescendantOfType<NodifyEditor>() is { } editor)
+            FitToScreen.Fit(editor);
+    }
+
     private async void OnExportSvg(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel viewModel || viewModel.SelectedDocument is null)
