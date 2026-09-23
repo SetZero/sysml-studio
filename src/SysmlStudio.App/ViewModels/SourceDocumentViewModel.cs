@@ -1,4 +1,3 @@
-using System.Text;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -16,14 +15,12 @@ public sealed partial class SourceDocumentViewModel : Document
 {
     private readonly ShellViewModel _shell;
     private readonly DispatcherTimer _reparse;
-    private string _savedText;
 
     public SourceDocumentViewModel(ShellViewModel shell, string path, string relativePath, string text)
     {
         _shell = shell;
         Path = path;
         RelativePath = relativePath;
-        _savedText = text;
         Id = "source:" + path;
         Title = System.IO.Path.GetFileName(path);
         CanFloat = true;
@@ -89,19 +86,31 @@ public sealed partial class SourceDocumentViewModel : Document
         Reparse();
     }
 
-    /// <summary>Writes the text to disk exactly as it stands.</summary>
-    public void Save()
+    /// <summary>Takes text an edit wrote to the model, without counting it as typing.</summary>
+    public void ReplaceText(string text)
     {
-        var text = Text.Text;
-        File.WriteAllText(Path, text, new UTF8Encoding(false));
-        _savedText = text;
-        IsDirty = false;
-        _shell.OnSourceSaved(this, text);
+        _replacing = true;
+        try
+        {
+            Text.Text = text;
+        }
+        finally
+        {
+            _replacing = false;
+        }
+
+        _reparse.Stop();
+        Reparse();
     }
+
+    private bool _replacing;
 
     private void OnTextChanged()
     {
-        IsDirty = !string.Equals(Text.Text, _savedText, StringComparison.Ordinal);
+        if (_replacing)
+            return;
+
+        IsDirty = true;
         _reparse.Stop();
         _reparse.Start();
     }

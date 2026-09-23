@@ -44,13 +44,17 @@
       <DockPanel Margin="10,12,10,10">
         <TextBlock DockPanel.Dock="Top" Text="TOOLBOX" Classes="caption" Margin="0,0,0,10" />
         <TextBlock DockPanel.Dock="Bottom" Classes="mono faint" FontSize="11" TextWrapping="Wrap"
-                   Text="drag onto canvas → add element op" />
-        <ItemsControl ItemsSource="{Binding Toolbox}"
-                      ToolTip.Tip="Graphical editing is the next milestone; edit the source tab for now."
-                      ToolTip.ShowOnDisabled="True">
+                   Text="an element: adds it · a relation: click the source box, then the target" />
+        <ItemsControl ItemsSource="{Binding Toolbox}">
           <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Button Classes="outline" Content="{Binding}" Margin="0,0,0,7" IsEnabled="False" />
+            <DataTemplate x:DataType="vm:ToolboxItem">
+              <Button Classes="outline" Margin="0,0,0,7" Click="OnToolboxClick"
+                      ToolTip.Tip="{Binding IsRelation, Converter={x:Static views:ToolboxTip.Instance}}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="→" Classes="faint" IsVisible="{Binding IsRelation}" />
+                  <TextBlock Text="{Binding Label}" />
+                </StackPanel>
+              </Button>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
@@ -60,6 +64,7 @@
     <!-- Canvas -->
     <Panel Grid.Column="1" Background="{DynamicResource CanvasBrush}">
       <nodify:NodifyEditor x:Name="Editor"
+                           ContextRequested="OnContextRequested"
                            ItemsSource="{Binding Nodes}"
                            Connections="{Binding Connections}"
                            ViewportZoom="{Binding Zoom, Mode=TwoWay}"

@@ -295,6 +295,15 @@ public sealed partial class DiagramDocumentViewModel : Document
         Connections = new ObservableCollection<DiagramConnectionViewModel>(
             diagram.Edges.ConvertAll(e => new DiagramConnectionViewModel(e, byNode[e.Source], byNode[e.Target])));
 
+        foreach (var node in nodes)
+        {
+            node.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(DiagramNodeViewModel.IsSelected) && node.IsSelected && !node.IsPseudoNode)
+                    ElementClicked?.Invoke(node.Element);
+            };
+        }
+
         // Past two dozen edges the labels crowd each other; the tooltip still names each one.
         var labelled = Connections.Count <= 24;
         foreach (var connection in Connections)
@@ -302,6 +311,10 @@ public sealed partial class DiagramDocumentViewModel : Document
     }
 
     public Diagram Diagram { get; }
+
+    /// <summary>Told when a box on the canvas is selected; the window selects its element everywhere.</summary>
+    public Action<Element>? ElementClicked { get; init; }
+
     public ObservableCollection<DiagramNodeViewModel> Nodes { get; }
     public ObservableCollection<DiagramConnectionViewModel> Connections { get; }
 
@@ -379,14 +392,14 @@ public sealed partial class DiagramDocumentViewModel : Document
         }
     }
 
-    /// <summary>What the toolbox would drop onto this kind of diagram.</summary>
-    public IReadOnlyList<string> Toolbox => Diagram.Kind switch
+    /// <summary>What the toolbox adds to, or draws on, this kind of diagram.</summary>
+    public IReadOnlyList<ToolboxItem> Toolbox => Diagram.Kind switch
     {
-        DiagramKind.Interconnection => ["Part", "Port", "Interface", "Connect", "Flow"],
-        DiagramKind.Requirements => ["Requirement", "Satisfy", "Verify", "Allocate"],
-        DiagramKind.ActionFlow => ["Action", "Succession", "Flow"],
-        DiagramKind.StateMachine => ["State", "Transition"],
-        _ => ["Part def", "Part", "Port", "Interface", "Attribute", "Specialization"],
+        DiagramKind.Interconnection => [new("Part", "part"), new("Port", "port"), new("Item", "item"), new("Connect", Relation: "Connect"), new("Flow", Relation: "Flow")],
+        DiagramKind.Requirements => [new("Requirement", "requirement"), new("Requirement def", "requirement def"), new("Satisfy", Relation: "Satisfy"), new("Dependency", Relation: "Dependency"), new("Allocate", Relation: "Allocate")],
+        DiagramKind.ActionFlow => [new("Action", "action"), new("Succession", Relation: "Succession")],
+        DiagramKind.StateMachine => [new("State", "state"), new("Transition", Relation: "Transition")],
+        _ => [new("Part def", "part def"), new("Part", "part"), new("Port def", "port def"), new("Attribute", "attribute"), new("Specialization", Relation: "Specialization"), new("Composition", Relation: "Composition"), new("Dependency", Relation: "Dependency")],
     };
 
     [ObservableProperty]
@@ -445,4 +458,10 @@ public sealed partial class DiagramDocumentViewModel : Document
         DiagramKind.StateMachine => "State machine",
         _ => "Definition",
     };
+}
+
+/// <summary>A toolbox entry: an element kind to add, or a relation to draw between two boxes.</summary>
+public sealed record ToolboxItem(string Label, string? Kind = null, string? Relation = null)
+{
+    public bool IsRelation => Relation is not null;
 }

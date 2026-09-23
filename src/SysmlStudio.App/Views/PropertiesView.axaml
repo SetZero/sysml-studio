@@ -59,18 +59,26 @@
         <!-- Element operations -->
         <StackPanel Margin="14,20,14,16" Spacing="8">
           <TextBlock Text="ELEMENT OPERATIONS" Classes="caption" />
-          <Grid ColumnDefinitions="*,6,*" RowDefinitions="Auto,6,Auto,6,Auto"
-                ToolTip.Tip="Graphical editing is the next milestone; edit the source tab for now."
-                ToolTip.ShowOnDisabled="True">
-            <Button Grid.Row="0" Grid.Column="0" Classes="outline" Content="Rename…" IsEnabled="False" />
-            <Button Grid.Row="0" Grid.Column="2" Classes="outline" Content="Set typing…" IsEnabled="False" />
-            <Button Grid.Row="2" Grid.Column="0" Classes="outline" Content="Add part" IsEnabled="False" />
-            <Button Grid.Row="2" Grid.Column="2" Classes="outline" Content="Add port" IsEnabled="False" />
-            <Button Grid.Row="4" Grid.Column="0" Classes="outline" Content="Add satisfy" IsEnabled="False" />
-            <Button Grid.Row="4" Grid.Column="2" Classes="outline danger" Content="Delete" IsEnabled="False" />
+          <Grid ColumnDefinitions="*,6,*" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto">
+            <Button Grid.Row="0" Grid.Column="0" Classes="outline" Content="Rename…"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).RenameCommand}" />
+            <Button Grid.Row="0" Grid.Column="2" Classes="outline" Content="Set typing…"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).SetTypeCommand}" />
+            <Button Grid.Row="2" Grid.Column="0" Classes="outline" Content="Add part"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).AddCommand}" CommandParameter="part" />
+            <Button Grid.Row="2" Grid.Column="2" Classes="outline" Content="Add port"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).AddCommand}" CommandParameter="port" />
+            <Button Grid.Row="4" Grid.Column="0" Classes="outline" Content="Add satisfy"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).AddSatisfyCommand}" />
+            <Button Grid.Row="4" Grid.Column="2" Classes="outline" Content="Doc comment…"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).EditDocCommand}" />
+            <Button Grid.Row="6" Grid.Column="0" Classes="outline" Content="Specializes…"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).SpecializeCommand}" />
+            <Button Grid.Row="6" Grid.Column="2" Classes="outline danger" Content="Delete"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).DeleteCommand}" />
           </Grid>
           <TextBlock Classes="mono faint" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
-                     Text="every operation → TokenStreamRewriter patch · re-parse gate · undo snapshot" />
+                     Text="every operation → a text patch · re-parse gate · undo (Ctrl+Z) · Save writes the files" />
         </StackPanel>
       </StackPanel>
     </ScrollViewer>

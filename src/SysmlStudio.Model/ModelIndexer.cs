@@ -78,7 +78,7 @@ public static class ModelIndexer
             {
                 var imported = FindShallow(ctx, "importDeclaration").FirstOrDefault();
                 if (imported is not null)
-                    parent.Add(new Relation(RelationKind.Import, parent, Written(imported)));
+                    parent.Add(Relate(RelationKind.Import, parent, imported));
                 continue;
             }
 
@@ -88,7 +88,7 @@ public static class ModelIndexer
                 continue;
             }
 
-            if (TryKind(rule, out var kind))
+            if (TryKind(rule, out var kind) && CoversText(ctx))
             {
                 var element = new Element(kind, file, ctx);
                 Describe(element, ctx);
@@ -148,7 +148,7 @@ public static class ModelIndexer
     /// <summary>Walks one context as if it were a node's only child.</summary>
     private static void WalkOne(ParserRuleContext ctx, Element parent, SourceFile file)
     {
-        if (TryKind(RuleName(ctx), out var kind))
+        if (TryKind(RuleName(ctx), out var kind) && CoversText(ctx))
         {
             var element = new Element(kind, file, ctx);
             Describe(element, ctx);
@@ -160,6 +160,14 @@ public static class ModelIndexer
             Walk(ctx, parent, file);
         }
     }
+
+    /// <summary>
+    /// Whether a rule matched any text. The grammar has rules that match
+    /// nothing — the conjugated port every port definition implicitly has —
+    /// and an element with no text is not an element anyone wrote.
+    /// </summary>
+    private static bool CoversText(ParserRuleContext ctx)
+        => ctx.Stop is not null && ctx.Stop.TokenIndex >= ctx.Start.TokenIndex;
 
     private static bool TryKind(string rule, out string kind)
     {
@@ -209,13 +217,21 @@ public static class ModelIndexer
             ReadIdentification(element, identification);
 
         foreach (var meta in FindShallow(ctx, "prefixMetadataMember", "prefixMetadataAnnotation"))
-            element.Metadata.Add("#" + Written(meta).TrimStart('#').Trim());
+        {
+            var keyword = Written(meta).TrimStart('#').Trim();
+            element.Metadata.Add("#" + keyword);
+            element.PrefixSpans.Add((keyword, Span(meta)));
+        }
 
         foreach (var meta in FindShallow(ctx, "metadataFeature"))
             element.Metadata.Add(Written(meta).Trim());
 
         foreach (var doc in FindShallow(ctx, "documentation"))
+        {
             element.Documentation = AppendDoc(element.Documentation, DocText(doc));
+            if (element.DocSpan is null && doc.GetChild(doc.ChildCount - 1) is ITerminalNode comment)
+                element.DocSpan = new TextSpan(comment.Symbol.StartIndex, comment.Symbol.StopIndex);
+        }
 
         var multiplicity = FindShallow(ctx, "ownedMultiplicity").FirstOrDefault();
         if (multiplicity is not null)
@@ -232,15 +248,12 @@ public static class ModelIndexer
     {
         var names = FindShallow(identification, "name").ToList();
         var hasShort = identification.GetChild(0) is ITerminalNode t && t.GetText() == "<";
+        var nameContext = hasShort ? names.ElementAtOrDefault(1) : names.ElementAtOrDefault(0);
         if (hasShort)
-        {
             element.ShortName = Unquote(names.ElementAtOrDefault(0)?.GetText());
-            element.Name = Unquote(names.ElementAtOrDefault(1)?.GetText());
-        }
-        else
-        {
-            element.Name = Unquote(names.ElementAtOrDefault(0)?.GetText());
-        }
+        element.Name = Unquote(nameContext?.GetText());
+        if (nameContext is not null)
+            element.NameSpan = Span(nameContext);
     }
 
     private static void ReadRelations(Element element, ParserRuleContext ctx)
@@ -249,17 +262,17 @@ public static class ModelIndexer
         foreach (var part in FindShallow(ctx, "subclassificationPart"))
         {
             foreach (var target in FindShallow(part, "ownedSubclassification"))
-                element.Add(new Relation(RelationKind.Specialization, element, Written(target)));
+                element.Add(Relate(RelationKind.Specialization, element, target));
         }
 
         foreach (var part in FindShallow(ctx, "featureSpecializationPart"))
         {
             foreach (var typing in FindShallow(part, "ownedFeatureTyping"))
-                element.Add(new Relation(RelationKind.Typing, element, Written(typing)));
+                element.Add(Relate(RelationKind.Typing, element, typing));
             foreach (var subset in FindShallow(part, "ownedSubsetting"))
-                element.Add(new Relation(RelationKind.Specialization, element, Written(subset)));
+                element.Add(Relate(RelationKind.Specialization, element, subset));
             foreach (var redef in FindShallow(part, "ownedRedefinition"))
-                element.Add(new Relation(RelationKind.Redefinition, element, Written(redef)));
+                element.Add(Relate(RelationKind.Redefinition, element, redef));
         }
 
         // Connectors: connect / interface / allocate / flow all carry end members.
@@ -274,10 +287,9 @@ public static class ModelIndexer
 
         if (connectorKind is { } ck)
         {
-            var ends = FindShallow(ctx, "connectorEndMember", "interfaceEndMember", "messageEventMember")
-                .ConvertAll(Written);
+            var ends = FindShallow(ctx, "connectorEndMember", "interfaceEndMember", "messageEventMember");
             for (var i = 0; i + 1 < ends.Count; i++)
-                element.Add(new Relation(ck, element, ends[i + 1], element.Name, ends[i]));
+                element.Add(Relate(ck, element, ends[i + 1], element.Name, ends[i]));
         }
 
         switch (element.Kind)
@@ -288,11 +300,7 @@ public static class ModelIndexer
                     var requirement = FindShallow(ctx, "ownedReferenceSubsetting").FirstOrDefault();
                     var subject = FindShallow(ctx, "satisfactionSubjectMember").FirstOrDefault();
                     if (requirement is not null)
-                    {
-                        element.Add(new Relation(RelationKind.Satisfy, element, Written(requirement),
-                            originReference: subject is null ? null : Written(subject)));
-                    }
-
+                        element.Add(Relate(RelationKind.Satisfy, element, requirement, origin: subject));
                     break;
                 }
 
@@ -300,7 +308,7 @@ public static class ModelIndexer
                 {
                     var requirement = FindShallow(ctx, "ownedReferenceSubsetting").FirstOrDefault();
                     if (requirement is not null)
-                        element.Add(new Relation(RelationKind.Verify, element, Written(requirement)));
+                        element.Add(Relate(RelationKind.Verify, element, requirement));
                     break;
                 }
 
@@ -315,8 +323,7 @@ public static class ModelIndexer
                         var label = string.Join(" ", new[] { trigger, guard }
                             .OfType<ParserRuleContext>()
                             .Select(Written));
-                        element.Add(new Relation(RelationKind.Transition, element, Written(target),
-                            label.Length == 0 ? null : label, Written(source)));
+                        element.Add(Relate(RelationKind.Transition, element, target, label.Length == 0 ? null : label, source));
                         element.Value = Written(source);
                     }
 
@@ -325,9 +332,9 @@ public static class ModelIndexer
 
             case "succession":
                 {
-                    var ends = FindShallow(ctx, "connectorEndMember").ConvertAll(Written);
+                    var ends = FindShallow(ctx, "connectorEndMember");
                     for (var i = 0; i + 1 < ends.Count; i++)
-                        element.Add(new Relation(RelationKind.Succession, element, ends[i + 1], element.Name, ends[i]));
+                        element.Add(Relate(RelationKind.Succession, element, ends[i + 1], element.Name, ends[i]));
                     break;
                 }
 
@@ -338,9 +345,9 @@ public static class ModelIndexer
                     foreach (var supplier in suppliers)
                     {
                         if (clients.Count == 0)
-                            element.Add(new Relation(RelationKind.Dependency, element, supplier));
+                            element.Add(Relate(RelationKind.Dependency, element, supplier));
                         foreach (var client in clients)
-                            element.Add(new Relation(RelationKind.Dependency, element, supplier, originReference: client));
+                            element.Add(Relate(RelationKind.Dependency, element, supplier, origin: client));
                     }
 
                     break;
@@ -348,11 +355,23 @@ public static class ModelIndexer
         }
     }
 
+    /// <summary>A relation whose ends are written in the text, with where they are written.</summary>
+    private static Relation Relate(RelationKind kind, Element source, ParserRuleContext target,
+                                    string? label = null, ParserRuleContext? origin = null)
+        => new(kind, source, Written(target), label, origin is null ? null : Written(origin))
+        {
+            TargetSpan = Span(target),
+            OriginSpan = origin is null ? null : Span(origin),
+        };
+
+    private static TextSpan Span(ParserRuleContext ctx)
+        => new(ctx.Start.StartIndex, Math.Max(ctx.Start.StartIndex, (ctx.Stop ?? ctx.Start).StopIndex));
+
     /// <summary>The names a dependency lists after "from" and after "to".</summary>
-    private static (List<string> Clients, List<string> Suppliers) DependencyEnds(ParserRuleContext ctx)
+    private static (List<ParserRuleContext> Clients, List<ParserRuleContext> Suppliers) DependencyEnds(ParserRuleContext ctx)
     {
-        var clients = new List<string>();
-        var suppliers = new List<string>();
+        var clients = new List<ParserRuleContext>();
+        var suppliers = new List<ParserRuleContext>();
         var afterTo = false;
         for (var i = 0; i < ctx.ChildCount; i++)
         {
@@ -365,7 +384,7 @@ public static class ModelIndexer
             }
 
             if (child is ParserRuleContext q && RuleName(q) == "qualifiedName")
-                (afterTo ? suppliers : clients).Add(q.GetText());
+                (afterTo ? suppliers : clients).Add(q);
         }
 
         return (clients, suppliers);

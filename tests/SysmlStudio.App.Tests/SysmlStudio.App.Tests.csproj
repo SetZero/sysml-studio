@@ -4,6 +4,9 @@
     <IsPackable>false</IsPackable>
     <OutputType>Exe</OutputType>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Tests read the workspace through the window after each step; Sonar's
+         flow analysis cannot see that the window keeps it non-null. -->
+    <NoWarn>$(NoWarn);S8969</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

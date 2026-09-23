@@ -16,8 +16,8 @@ actually changed.
 | `SysmlStudio.Syntax` — parse SysML v2 text, keep tokens and comments | works |
 | `SysmlStudio.Model` — element tree, relations, name resolution | works |
 | `SysmlStudio.Diagrams` — the five diagram kinds, MSAGL layout | works |
-| `SysmlStudio.App` — the Avalonia application | ribbon, dockable panes, five diagram kinds, source tabs you can edit and save, problems and usages |
-| `SysmlStudio.Editing` — graphical edits as text patches | not started: the ribbon's rename/add/delete and the toolbox are there, disabled |
+| `SysmlStudio.Editing` — edits as text patches | rename (every reference, across files), delete, add, set type, specialize, maturity, doc comment, and drawing connect / flow / succession / transition / satisfy / dependency / allocate / specialization / composition; each re-parsed before it is accepted |
+| `SysmlStudio.App` — the Avalonia application | ribbon, dockable panes, five diagram kinds, right-click menus on the tree and the canvas, edit dialogs with a preview of what will be written, a relation tool, undo/redo, source tabs; Save writes the changed files |
 
 Open a model folder:
 
@@ -27,10 +27,12 @@ dotnet run --project src/SysmlStudio.App -- ../os/docs/sysml
 
 The project browser lists every package and element with its maturity bar;
 select one and the ribbon's Diagram kind group lights the diagrams that can be
-drawn of it. A source tab edits the file as text, re-parses a quarter of a
-second after typing stops, and writes it back on Save. Graphical editing is
-the next milestone. With no folder given, the Start page offers the sample
-model in `samples/vehicle`.
+drawn of it. Right-click an element — in the tree or on a diagram — to add
+inside it, rename it, type it, mark it or delete it; each dialog shows the
+lines it will write before it writes them. Toolbox relations draw between two
+clicked boxes. Every edit is a patch over the text, re-parsed before it is
+accepted, kept in memory with undo until Save writes the changed files. With
+no folder given, the Start page offers the sample model in `samples/vehicle`.
 
 What the model holds can also be printed without the window:
 

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -24,6 +25,33 @@ public sealed partial class DiagramDocumentView : UserControl
     {
         InitializeComponent();
         DataContextChanged += (_, _) => Wire();
+    }
+
+    private ShellViewModel? Shell => this.FindAncestorOfType<Window>()?.DataContext as ShellViewModel;
+
+    /// <summary>A toolbox entry adds an element to what the diagram is of, or starts drawing a relation.</summary>
+    private void OnToolboxClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if ((sender as Control)?.DataContext is not ToolboxItem item || Shell is not { } shell)
+            return;
+
+        if (item.Relation is { } relation)
+            shell.StartRelationCommand.Execute(relation);
+        else if (item.Kind is { } kind)
+            shell.AddToDiagramCommand.Execute(kind);
+    }
+
+    /// <summary>Right-click on a box opens the element's menu; on the empty canvas, the diagram's.</summary>
+    private void OnContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (Shell is not { } shell || DataContext is not DiagramDocumentViewModel diagram || e.Source is not Control source)
+            return;
+
+        var menu = source.FindAncestorOfType<ItemContainer>(includeSelf: true) is { DataContext: DiagramNodeViewModel { IsPseudoNode: false } node }
+            ? ElementMenu.For(shell, node.Element)
+            : ElementMenu.ForCanvas(shell, diagram);
+        menu.Open(source);
+        e.Handled = true;
     }
 
     /// <summary>Hands the view model the two things only the view can do: frame and render.</summary>

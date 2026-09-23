@@ -3,6 +3,15 @@ using SysmlStudio.Syntax;
 
 namespace SysmlStudio.Model;
 
+/// <summary>
+/// A stretch of a file's text by character offset, both ends included, as
+/// ANTLR reports tokens. Edits are patches over these.
+/// </summary>
+public readonly record struct TextSpan(int Start, int Stop)
+{
+    public int Length => Stop - Start + 1;
+}
+
 /// <summary>What kind of edge one element draws to another.</summary>
 public enum RelationKind
 {
@@ -75,6 +84,12 @@ public sealed class Relation(RelationKind kind, Element source, string targetRef
 
     public Element? Origin { get; internal set; }
 
+    /// <summary>Where the target reference is written, for rename; null where nothing is written.</summary>
+    public TextSpan? TargetSpan { get; init; }
+
+    /// <summary>Where the origin reference is written, for rename.</summary>
+    public TextSpan? OriginSpan { get; init; }
+
     /// <summary>Where the arrow starts: the resolved origin, or else the element that declares it.</summary>
     public Element? From => OriginReference is null ? Source : Origin;
 
@@ -111,6 +126,18 @@ public sealed class Element
 
     /// <summary>Prefix keywords such as "#implemented" and bodies such as "@stage { number = 3; }".</summary>
     public List<string> Metadata { get; } = [];
+
+    /// <summary>Where the declared name is written, for rename.</summary>
+    public TextSpan? NameSpan { get; internal set; }
+
+    /// <summary>Where the first doc comment's comment token is written.</summary>
+    public TextSpan? DocSpan { get; internal set; }
+
+    /// <summary>Where each "#keyword" prefix is written, "#" included.</summary>
+    public List<(string Keyword, TextSpan Span)> PrefixSpans { get; } = [];
+
+    /// <summary>The whole declaration, first character to last.</summary>
+    public TextSpan Span => new(Context.Start.StartIndex, Math.Max(Context.Start.StartIndex, (Context.Stop ?? Context.Start).StopIndex));
 
     /// <summary>The multiplicity as written, e.g. "[1..*]", or null.</summary>
     public string? Multiplicity { get; internal set; }

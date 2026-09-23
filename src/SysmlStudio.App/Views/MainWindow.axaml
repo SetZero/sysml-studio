@@ -17,6 +17,12 @@
     <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAllCommand}" />
     <KeyBinding Gesture="Shift+F12" Command="{Binding FindUsagesCommand}" />
     <KeyBinding Gesture="Ctrl+D0" Command="{Binding FitCommand}" />
+    <KeyBinding Gesture="F2" Command="{Binding RenameCommand}" />
+    <KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" />
+    <KeyBinding Gesture="Insert" Command="{Binding AddCommand}" />
+    <KeyBinding Gesture="Escape" Command="{Binding CancelToolCommand}" />
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
   </Window.KeyBindings>
 
   <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
@@ -111,6 +117,7 @@
           <TextBlock Text="{Binding ErrorText}" Classes="mono error" FontSize="12" IsVisible="{Binding HasWorkspace}" />
           <TextBlock Text="{Binding WarningText}" Classes="mono warning" FontSize="12" IsVisible="{Binding HasWorkspace}" />
           <TextBlock Text="{Binding Caret}" Classes="mono muted" FontSize="12" />
+          <TextBlock Text="{Binding ToolHint}" Classes="mono link" FontSize="12" IsVisible="{Binding HasTool}" />
         </StackPanel>
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="22">
           <TextBlock Text="{Binding SaveState}" Classes="mono muted" FontSize="12" />
@@ -119,6 +126,11 @@
         </StackPanel>
       </Grid>
     </Border>
+
+    <!-- The edit dialog, over everything -->
+    <Panel Grid.Row="0" Grid.RowSpan="5" Background="{DynamicResource OverlayBrush}" IsVisible="{Binding HasDialog}">
+      <views:EditDialogView DataContext="{Binding Dialog}" />
+    </Panel>
 
   </Grid>
 </Window>

@@ -17,7 +17,8 @@
         <TextBlock Text="Open a folder of .sysml files to index it." Classes="muted" FontSize="13.5" TextWrapping="Wrap" />
       </StackPanel>
 
-      <TreeView ItemsSource="{Binding Roots}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+      <TreeView x:Name="Tree" ItemsSource="{Binding Roots}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+                ContextRequested="OnContextRequested"
                 Background="Transparent" Padding="0,4" IsVisible="{Binding HasWorkspace}">
         <TreeView.Styles>
           <Style Selector="TreeViewItem" x:DataType="vm:ElementViewModel">

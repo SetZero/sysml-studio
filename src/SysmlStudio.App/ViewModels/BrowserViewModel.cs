@@ -36,6 +36,9 @@ public sealed partial class ElementViewModel(Element? element, string kind, stri
 
     public ObservableCollection<ElementViewModel> Children => _materialised ??= _children();
 
+    /// <summary>The children already built, without building any.</summary>
+    public IEnumerable<ElementViewModel> ChildrenIfShown => _materialised ?? [];
+
     [ObservableProperty]
     public partial bool IsExpanded { get; set; }
 }
@@ -70,11 +73,31 @@ public sealed partial class BrowserViewModel : Tool
 
     public bool HasWorkspace => _workspace is not null;
 
-    public void Show(SysmlWorkspace? workspace)
+    private IReadOnlySet<string> _expanded = new HashSet<string>();
+
+    /// <summary>Shows a workspace; rows whose qualified names are in <paramref name="expanded"/> open again.</summary>
+    public void Show(SysmlWorkspace? workspace, IReadOnlySet<string>? expanded = null)
     {
         _workspace = workspace;
+        _expanded = expanded ?? new HashSet<string>();
         OnPropertyChanged(nameof(HasWorkspace));
         Rebuild();
+    }
+
+    /// <summary>The qualified names of the rows open now, for a rebuild to open again.</summary>
+    public IEnumerable<string> ExpandedPaths()
+    {
+        var stack = new Stack<ElementViewModel>(Roots);
+        while (stack.Count > 0)
+        {
+            var row = stack.Pop();
+            if (!row.IsExpanded)
+                continue;
+            if (row.Element?.QualifiedName is { Length: > 0 } name)
+                yield return name;
+            foreach (var child in row.ChildrenIfShown)
+                stack.Push(child);
+        }
     }
 
     /// <summary>Selects the row for <paramref name="element"/>, expanding the way down to it.</summary>
@@ -115,14 +138,15 @@ public sealed partial class BrowserViewModel : Tool
         var parent = Path.GetFileName(Path.GetDirectoryName(workspace.Directory.TrimEnd('\\', '/')) ?? string.Empty);
         var label = $"{parent}/{folder} · {workspace.Files.Count} files";
 
-        var root = new ElementViewModel(null, string.Empty, label, () => ChildrenOf(workspace.Root, filter, depth: 0))
+        var expanded = _expanded;
+        var root = new ElementViewModel(null, string.Empty, label, () => ChildrenOf(workspace.Root, filter, depth: 0, expanded))
         {
             IsExpanded = true,
         };
         Roots.Add(root);
     }
 
-    private static ObservableCollection<ElementViewModel> ChildrenOf(Element parent, string filter, int depth)
+    private static ObservableCollection<ElementViewModel> ChildrenOf(Element parent, string filter, int depth, IReadOnlySet<string> expanded)
     {
         var rows = new ObservableCollection<ElementViewModel>();
         foreach (var child in parent.Children.Where(IsBrowsable))
@@ -132,10 +156,12 @@ public sealed partial class BrowserViewModel : Tool
 
             var captured = child;
             var row = new ElementViewModel(child, KindLabel(child, depth), child.DisplayName,
-                () => ChildrenOf(captured, filter, depth + 1))
+                () => ChildrenOf(captured, filter, depth + 1, expanded))
             {
-                // Top-level packages open, and so does everything on the way to a filter match.
-                IsExpanded = filter.Length > 0 ? HasMatchingDescendant(child, filter) : depth == 0 && parent.Children.Count(IsBrowsable) == 1,
+                // What was open stays open; a filter opens the way to every match.
+                IsExpanded = filter.Length > 0
+                    ? HasMatchingDescendant(child, filter)
+                    : expanded.Contains(child.QualifiedName) || (depth == 0 && parent.Children.Count(IsBrowsable) == 1),
             };
             rows.Add(row);
         }

@@ -22,10 +22,7 @@ namespace SysmlStudio.App.ViewModels;
 /// </summary>
 public sealed partial class ShellViewModel : ObservableObject
 {
-    private const string NotYet = "Graphical editing is the next milestone; edit the source tab for now.";
-
     private readonly StudioDockFactory _factory;
-    private readonly Dictionary<string, IReadOnlyList<SyntaxError>> _liveErrors = new(StringComparer.OrdinalIgnoreCase);
     private IShellDialogs? _dialogs;
 
     public ShellViewModel()
@@ -115,8 +112,6 @@ public sealed partial class ShellViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(OpenDiagramCommand), nameof(FindUsagesCommand))]
     public partial Element? SelectedElement { get; set; }
 
-    public static string NotYetHint => NotYet;
-
     public void Attach(IShellDialogs dialogs) => _dialogs = dialogs;
 
     // ----- opening ----------------------------------------------------------
@@ -136,7 +131,8 @@ public sealed partial class ShellViewModel : ObservableObject
 
         CloseAllDocuments();
         Workspace = SysmlWorkspace.Load(folder);
-        _liveErrors.Clear();
+        _history.Clear();
+        RefreshMaturityKeywords();
 
         Browser.Show(Workspace);
         Welcome.OpenFolderName = ShortFolder(folder);
@@ -154,7 +150,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
         // Whatever was open last time, where it was left.
         foreach (var diagram in DiagramStore.Reopen(DiagramStore.Load(folder), Workspace))
-            _factory.Show(new DiagramDocumentViewModel(diagram, laidOut: true));
+            _factory.Show(CreateDiagram(diagram, laidOut: true));
 
         if (_factory.Documents.VisibleDockables?.Count > 1)
             HideWelcome();
@@ -173,7 +169,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
         var id = $"diagram:{kind}:{element.QualifiedName}";
         var existing = _factory.Documents.VisibleDockables?.FirstOrDefault(d => d.Id == id);
-        _factory.Show(existing ?? new DiagramDocumentViewModel(DiagramBuilder.Build(kind, element)));
+        _factory.Show(existing ?? CreateDiagram(DiagramBuilder.Build(kind, element)));
         HideWelcome();
     }
 
@@ -214,7 +210,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         SelectedElement = element;
         Properties.Element = element;
-        if (element is not null)
+        if (element is not null && !_selecting)
             FollowSelection(element);
     }
 
@@ -250,7 +246,7 @@ public sealed partial class ShellViewModel : ObservableObject
             return;
         }
 
-        var replacement = new DiagramDocumentViewModel(DiagramBuilder.Build(kind, element));
+        var replacement = CreateDiagram(DiagramBuilder.Build(kind, element));
         _factory.Replace(current, replacement);
     }
 
@@ -285,20 +281,28 @@ public sealed partial class ShellViewModel : ObservableObject
 
     // ----- saving -----------------------------------------------------------
 
+    /// <summary>Writes every changed file, and the diagram layout.</summary>
     [RelayCommand]
-    private void Save()
-    {
-        if (ActiveSource is { IsDirty: true } source)
-            source.Save();
-        SaveLayout();
-    }
+    private void Save() => SaveAll();
 
     [RelayCommand]
     private void SaveAll()
     {
-        foreach (var source in OpenSources().Where(s => s.IsDirty))
-            source.Save();
+        if (Workspace is not { } workspace)
+            return;
+
+        foreach (var source in OpenSources())
+            source.FlushPendingReparse();
+
+        var written = workspace.DirtyFiles.ToList();
+        foreach (var path in written)
+        {
+            workspace.Save(path);
+            Bottom.Log($"saved {workspace.RelativePath(path)}");
+        }
+
         SaveLayout();
+        AfterModelChange();
     }
 
     /// <summary>Writes which diagrams are open and where their nodes sit. Nothing of it goes into the model.</summary>
@@ -319,35 +323,70 @@ public sealed partial class ShellViewModel : ObservableObject
         RefreshStatus();
     }
 
-    /// <summary>A source tab re-parsed after typing: its errors replace the file's in the Problems pane.</summary>
+    /// <summary>
+    /// A source tab re-parsed after typing. Its text becomes the model's text
+    /// for that file, so edits made from a diagram start from what was typed;
+    /// the views are rebuilt on Save, not on every pause in typing.
+    /// </summary>
     public void OnSourceReparsed(SourceDocumentViewModel source, SourceFile parsed)
-    {
-        _liveErrors[source.Path] = parsed.Errors;
-        RefreshProblems();
-    }
-
-    /// <summary>A source tab was written to disk: the model is re-indexed from it.</summary>
-    public void OnSourceSaved(SourceDocumentViewModel source, string text)
     {
         if (Workspace is not { } workspace)
             return;
 
-        workspace.Update(source.Path, text);
-        _liveErrors.Remove(source.Path);
-        Browser.Show(workspace);
+        var current = workspace.Files.FirstOrDefault(f => string.Equals(f.Path, source.Path, StringComparison.OrdinalIgnoreCase));
+        if (current is not null && current.Text != parsed.Text)
+        {
+            workspace.Update(source.Path, parsed.Text);
+
+            // Model undo restores whole files; after typing it would undo the typing too.
+            _history.Clear();
+            UndoCommand.NotifyCanExecuteChanged();
+            RedoCommand.NotifyCanExecuteChanged();
+        }
+
+        source.IsDirty = workspace.IsDirty(source.Path);
         RefreshProblems();
-        Bottom.Log($"saved {workspace.RelativePath(source.Path)}");
+        RefreshStatus();
     }
 
     // ----- history ----------------------------------------------------------
 
+    /// <summary>In a source tab, the editor's own undo; anywhere else, the last model edit.</summary>
     [RelayCommand(CanExecute = nameof(CanUndo))]
-    private void Undo() => ActiveSource?.Text.UndoStack.Undo();
+    private void Undo()
+    {
+        if (ActiveSource is { } source)
+        {
+            source.Text.UndoStack.Undo();
+            return;
+        }
 
-    private bool CanUndo() => ActiveSource is not null;
+        if (Workspace is { } workspace && _history.Undo(workspace) is { } record)
+        {
+            Bottom.Log("undo: " + record.Description);
+            AfterModelChange();
+        }
+    }
 
-    [RelayCommand(CanExecute = nameof(CanUndo))]
-    private void Redo() => ActiveSource?.Text.UndoStack.Redo();
+    private bool CanUndo() => ActiveSource is not null || _history.CanUndo;
+
+    [RelayCommand(CanExecute = nameof(CanRedo))]
+    private void Redo()
+    {
+        if (ActiveSource is { } source)
+        {
+            source.Text.UndoStack.Redo();
+            return;
+        }
+
+        if (Workspace is { } workspace && _history.Redo(workspace) is { } record)
+        {
+            Bottom.Log("redo: " + record.Description);
+            AfterModelChange();
+        }
+    }
+
+    private bool CanRedo() => ActiveSource is not null || _history.CanRedo;
 
     // ----- element ----------------------------------------------------------
 
@@ -360,14 +399,6 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private bool HasSelection() => SelectedElement is not null && Workspace is not null;
 
-    /// <summary>The graphical edit operations: present, and honest that they are not wired yet.</summary>
-    [RelayCommand(CanExecute = nameof(CanEditGraphically))]
-    private void EditOperation(string _)
-    {
-        // Never runs: CanEditGraphically is false until the editing layer lands.
-    }
-
-    private static bool CanEditGraphically(string _) => false;
 
     // ----- arrange and export -----------------------------------------------
 
@@ -433,7 +464,7 @@ public sealed partial class ShellViewModel : ObservableObject
         IndexedSummary = Workspace is { } w
             ? string.Create(CultureInfo.InvariantCulture, $"indexed {w.Files.Count} files  ·  {w.Elements.Count():N0} elements").Replace(',', ' ')
             : "idle";
-        SaveState = OpenSources().Any(s => s.IsDirty) ? "modified" : "saved";
+        SaveState = Workspace?.DirtyFiles.Any() == true || OpenSources().Any(s => s.IsDirty) ? "modified" : "saved";
     }
 
     public void SetCaret(int line, int column)
@@ -441,15 +472,8 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void RefreshProblems()
     {
+        // The workspace holds what source tabs typed, so its diagnostics are the live ones.
         var diagnostics = Workspace?.Diagnostics.ToList() ?? [];
-
-        // A source tab's live parse replaces the file's saved errors.
-        foreach (var (path, errors) in _liveErrors)
-        {
-            diagnostics.RemoveAll(d => d.Severity == Severity.Error && string.Equals(d.File, path, StringComparison.OrdinalIgnoreCase));
-            diagnostics.AddRange(errors.Select(e => new Diagnostic(Severity.Error, path, e.Line, e.Column + 1, e.Message)));
-        }
-
         Bottom.ShowProblems(Workspace, diagnostics.OrderBy(d => d.Severity).ThenBy(d => d.File, StringComparer.Ordinal).ThenBy(d => d.Line));
         OnPropertyChanged(nameof(ErrorCount));
         OnPropertyChanged(nameof(WarningCount));

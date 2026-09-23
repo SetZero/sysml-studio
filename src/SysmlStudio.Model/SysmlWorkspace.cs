@@ -21,6 +21,9 @@ public sealed class SysmlWorkspace
 {
     private readonly Dictionary<string, SourceFile> _files = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Each file's text as it was last read from or written to disk.</summary>
+    private readonly Dictionary<string, string> _onDisk = new(StringComparer.OrdinalIgnoreCase);
+
     private SysmlWorkspace(string directory)
     {
         Directory = directory;
@@ -46,7 +49,11 @@ public sealed class SysmlWorkspace
     {
         var workspace = new SysmlWorkspace(directory);
         foreach (var path in System.IO.Directory.GetFiles(directory, pattern, SearchOption.AllDirectories).Order())
-            workspace._files[path] = SourceFile.Parse(path);
+        {
+            var file = SourceFile.Parse(path);
+            workspace._files[path] = file;
+            workspace._onDisk[path] = file.Text;
+        }
         workspace.Reindex();
         return workspace;
     }
@@ -60,7 +67,30 @@ public sealed class SysmlWorkspace
         return file;
     }
 
+    /// <summary>Replaces several files' text at once — one edit may touch many — and re-indexes once.</summary>
+    public void Update(IReadOnlyDictionary<string, string> texts)
+    {
+        foreach (var (path, text) in texts)
+            _files[path] = SourceFile.ParseText(path, text);
+        Reindex();
+    }
+
     public SourceFile this[string path] => _files[path];
+
+    /// <summary>The files whose text differs from what is on disk.</summary>
+    public IEnumerable<string> DirtyFiles
+        => _files.Values.Where(f => !_onDisk.TryGetValue(f.Path, out var disk) || disk != f.Text).Select(f => f.Path);
+
+    public bool IsDirty(string path)
+        => _files.TryGetValue(path, out var file) && (!_onDisk.TryGetValue(path, out var disk) || disk != file.Text);
+
+    /// <summary>Writes one file's text to disk as it stands.</summary>
+    public void Save(string path)
+    {
+        var text = _files[path].Text;
+        File.WriteAllText(path, text, new System.Text.UTF8Encoding(false));
+        _onDisk[path] = text;
+    }
 
     /// <summary>The file's path relative to the workspace folder, with forward slashes.</summary>
     public string RelativePath(string path)
@@ -93,10 +123,19 @@ public sealed class SysmlWorkspace
     /// packages the enclosing scopes import, then by qualified name from the
     /// root. Short names ("&lt;'G.4'&gt;") resolve too, because the model cites them.
     /// </summary>
+    private Dictionary<string, Element> _byQualifiedName = new(StringComparer.Ordinal);
+    private Dictionary<string, Element> _byShortName = new(StringComparer.Ordinal);
+
+    /// <summary>What <paramref name="reference"/> names when written inside <paramref name="scope"/>.</summary>
+    public Element? ResolveReference(string reference, Element scope)
+        => Resolve(reference, scope, _byQualifiedName, _byShortName);
+
     private void Resolve()
     {
         var byQualifiedName = new Dictionary<string, Element>(StringComparer.Ordinal);
         var byShortName = new Dictionary<string, Element>(StringComparer.Ordinal);
+        _byQualifiedName = byQualifiedName;
+        _byShortName = byShortName;
         foreach (var element in Elements)
         {
             if (element.Name is not null)
@@ -153,24 +192,58 @@ public sealed class SysmlWorkspace
     /// </summary>
     private static bool MayComeFromOutside(string reference, Element from, Dictionary<string, Element> byQualifiedName)
     {
+        // Every action has a start and a done; they come from the Actions library.
+        if (reference.Trim() is "start" or "done")
+            return true;
+
         // "FerrixBoot::Missing" names a package this folder holds: no excuse.
         var head = Normalize(reference).Split("::")[0];
         if (reference.Contains("::", StringComparison.Ordinal) && byQualifiedName.ContainsKey(head))
             return false;
 
+        var name = Normalize(reference).Split("::")[^1];
         for (var scope = from; scope is not null; scope = scope.Parent)
         {
             foreach (var import in scope.Relations.Where(r => r.Kind == RelationKind.Import))
             {
                 var imported = import.TargetReference.Trim();
                 var package = imported.Split("::")[0].Trim();
-                if (package.Length > 0 && !byQualifiedName.ContainsKey(package))
+                if (package.Length == 0 || byQualifiedName.ContainsKey(package))
+                    continue;
+
+                // A package of the standard library excuses only the names it
+                // defines; any other package the folder lacks excuses anything,
+                // since there is no telling what is in it.
+                if (!StandardLibrary.TryGetValue(package, out var defined) || defined.Contains(name))
                     return true;
             }
         }
 
         return false;
     }
+
+    /// <summary>
+    /// What the most-imported packages of the SysML v2 standard library define,
+    /// so that a missing name is not excused merely because one of them is
+    /// imported. Names only; the library itself is not loaded.
+    /// </summary>
+    private static readonly Dictionary<string, HashSet<string>> StandardLibrary = new(StringComparer.Ordinal)
+    {
+        ["ScalarValues"] =
+        [
+            "ScalarValue", "Boolean", "String", "NumericalValue", "Number", "Complex", "Real", "Rational",
+            "Integer", "Natural", "Positive",
+        ],
+        ["Base"] = ["Anything", "DataValue", "things", "dataValues"],
+        ["Actions"] = ["start", "done", "Action", "actions"],
+        ["RealFunctions"] = ["abs", "sqrt", "floor", "round", "max", "min", "sum", "product"],
+        ["ISQ"] =
+        [
+            "LengthValue", "MassValue", "DurationValue", "TimeValue", "SpeedValue", "AccelerationValue", "ForceValue",
+            "EnergyValue", "PowerValue", "TemperatureValue", "ElectricCurrentValue", "VoltageValue", "FrequencyValue",
+            "AngularMeasureValue", "AreaValue", "VolumeValue", "PressureValue", "TorqueValue",
+        ],
+    };
 
     /// <summary>
     /// Resolves a name, following a feature chain as far as the model goes:
@@ -183,7 +256,7 @@ public sealed class SysmlWorkspace
                                     Dictionary<string, Element> byQualifiedName,
                                     Dictionary<string, Element> byShortName)
     {
-        var head = Lookup(reference, from, byQualifiedName, byShortName);
+        var head = Lookup(reference, from, byQualifiedName, byShortName) ?? Inherited(reference, from);
         var dot = reference.IndexOf('.');
         if (head is null || dot < 0)
             return head;
@@ -201,6 +274,26 @@ public sealed class SysmlWorkspace
         return current;
     }
 
+    /// <summary>
+    /// A bare name that is none of the enclosing scopes' own members may be a
+    /// member they inherit: ":>> number" inside a requirement typed by Stage
+    /// redefines Stage's number.
+    /// </summary>
+    private static Element? Inherited(string reference, Element from)
+    {
+        var name = Normalize(reference);
+        if (name.Length == 0 || name.Contains("::", StringComparison.Ordinal))
+            return null;
+
+        for (var scope = from; scope is not null; scope = scope.Parent)
+        {
+            if (FeatureNamed(scope, name, depth: 0) is { } found && !ReferenceEquals(found, from))
+                return found;
+        }
+
+        return null;
+    }
+
     /// <summary>A feature by name: owned, or owned by what the element is typed by or specializes.</summary>
     private static Element? FeatureNamed(Element element, string name, int depth)
     {
@@ -211,9 +304,10 @@ public sealed class SysmlWorkspace
         if (owned is not null)
             return owned;
 
-        foreach (var relation in element.Relations.Where(r => r.Kind is RelationKind.Typing or RelationKind.Specialization))
+        // A redefinition inherits what it redefines: "part :>> kernel { part :>> arch }".
+        foreach (var relation in element.Relations.Where(r => r.Kind is RelationKind.Typing or RelationKind.Specialization or RelationKind.Redefinition))
         {
-            if (relation.Target is { } type && FeatureNamed(type, name, depth + 1) is { } inherited)
+            if (relation.Target is { } type && !ReferenceEquals(type, element) && FeatureNamed(type, name, depth + 1) is { } inherited)
                 return inherited;
         }
 

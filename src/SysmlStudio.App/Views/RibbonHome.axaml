@@ -56,30 +56,36 @@
       <Grid RowDefinitions="*,Auto">
         <StackPanel Orientation="Horizontal" Spacing="8">
           <StackPanel Spacing="1">
-            <Button Classes="flat ribbon-small" Command="{Binding EditOperationCommand}" CommandParameter="rename"
-                    ToolTip.Tip="{x:Static vm:ShellViewModel.NotYetHint}" ToolTip.ShowOnDisabled="True">
+            <Button Classes="flat ribbon-small" Command="{Binding RenameCommand}" ToolTip.Tip="Rename the selected element everywhere it is named (F2)">
               <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Rename" /><TextBlock Text="Rename…" /></StackPanel>
             </Button>
             <Button Classes="flat ribbon-small" Command="{Binding FindUsagesCommand}" ToolTip.Tip="Where the selected element is named (Shift+F12)">
               <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Search" /><TextBlock Text="Find usages" /></StackPanel>
             </Button>
-            <Button Classes="flat ribbon-small" Command="{Binding EditOperationCommand}" CommandParameter="delete"
-                    ToolTip.Tip="{x:Static vm:ShellViewModel.NotYetHint}" ToolTip.ShowOnDisabled="True">
+            <Button Classes="flat ribbon-small" Command="{Binding DeleteCommand}" ToolTip.Tip="Delete the selected element (Del)">
               <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Delete" /><TextBlock Text="Delete" /></StackPanel>
             </Button>
           </StackPanel>
           <StackPanel Spacing="1">
-            <Button Classes="flat ribbon-small" Command="{Binding EditOperationCommand}" CommandParameter="add-part"
-                    ToolTip.Tip="{x:Static vm:ShellViewModel.NotYetHint}" ToolTip.ShowOnDisabled="True">
+            <Button Classes="flat ribbon-small" Command="{Binding AddCommand}" CommandParameter="part" ToolTip.Tip="Add a part inside the selected element">
               <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Add" /><TextBlock Text="Add part" /></StackPanel>
             </Button>
-            <Button Classes="flat ribbon-small" Command="{Binding EditOperationCommand}" CommandParameter="add-port"
-                    ToolTip.Tip="{x:Static vm:ShellViewModel.NotYetHint}" ToolTip.ShowOnDisabled="True">
+            <Button Classes="flat ribbon-small" Command="{Binding AddCommand}" CommandParameter="port" ToolTip.Tip="Add a port inside the selected element">
               <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Add" /><TextBlock Text="Add port" /></StackPanel>
             </Button>
-            <Button Classes="flat ribbon-small" Command="{Binding EditOperationCommand}" CommandParameter="add-satisfy"
-                    ToolTip.Tip="{x:Static vm:ShellViewModel.NotYetHint}" ToolTip.ShowOnDisabled="True">
+            <Button Classes="flat ribbon-small" Command="{Binding AddSatisfyCommand}" ToolTip.Tip="Say which requirement the selected element satisfies">
               <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Add" /><TextBlock Text="Add satisfy" /></StackPanel>
+            </Button>
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <Button Classes="flat ribbon-small" Command="{Binding AddCommand}" ToolTip.Tip="Add any kind of element inside the selected one (Ins)">
+              <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Add" /><TextBlock Text="Add…" /></StackPanel>
+            </Button>
+            <Button Classes="flat ribbon-small" Command="{Binding SetTypeCommand}" ToolTip.Tip="Set what the selected usage is typed by">
+              <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Edit" /><TextBlock Text="Set type…" /></StackPanel>
+            </Button>
+            <Button Classes="flat ribbon-small" Command="{Binding EditDocCommand}" ToolTip.Tip="Edit the selected element's doc comment">
+              <StackPanel Orientation="Horizontal"><ic:SymbolIcon Symbol="Edit" /><TextBlock Text="Doc comment…" /></StackPanel>
             </Button>
           </StackPanel>
         </StackPanel>
@@ -120,16 +126,29 @@
       </Grid>
     </Border>
 
-    <!-- MATURITY -->
+    <!-- MATURITY: the metadata definitions the model declares -->
     <Border Classes="group" BorderThickness="0">
       <Grid RowDefinitions="*,Auto">
-        <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" Margin="0,4,0,0"
-              ToolTip.Tip="{x:Static vm:ShellViewModel.NotYetHint}">
-          <Border Classes="chip" Margin="0,0,8,6"><TextBlock Text="#implemented" /></Border>
-          <Border Grid.Column="1" Classes="chip outlined" Margin="0,0,0,6"><TextBlock Text="@stage" /></Border>
-          <Border Grid.Row="1" Classes="chip outlined" Margin="0,0,8,0"><TextBlock Text="@deferred" /></Border>
-          <Border Grid.Row="1" Grid.Column="1" Classes="chip plain"><TextBlock Text="planned" /></Border>
-        </Grid>
+        <WrapPanel Orientation="Horizontal" MaxWidth="300" Margin="0,4,0,0">
+          <ItemsControl ItemsSource="{Binding MaturityKeywords}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><WrapPanel MaxWidth="300" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Classes="flat" Padding="0" Margin="0,0,6,6"
+                        Command="{Binding $parent[UserControl].((vm:ShellViewModel)DataContext).SetMaturityCommand}"
+                        CommandParameter="{Binding}" ToolTip.Tip="Mark the selected element with this keyword">
+                  <Border Classes="chip"><TextBlock Text="{Binding StringFormat='#{0}'}" /></Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Classes="flat" Padding="0" Margin="0,0,6,6" Command="{Binding SetMaturityCommand}" CommandParameter=""
+                  ToolTip.Tip="Remove the maturity keyword">
+            <Border Classes="chip plain"><TextBlock Text="none" /></Border>
+          </Button>
+        </WrapPanel>
         <TextBlock Grid.Row="1" Classes="caption" Text="MATURITY" HorizontalAlignment="Center" />
       </Grid>
     </Border>
