@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SysmlStudio.Diagrams\SysmlStudio.Diagrams.csproj" />
     <ProjectReference Include="..\..\src\SysmlStudio.Editing\SysmlStudio.Editing.csproj" />
+    <ProjectReference Include="..\..\src\SysmlStudio.Interchange\SysmlStudio.Interchange.csproj" />
   </ItemGroup>
 
   <ItemGroup>

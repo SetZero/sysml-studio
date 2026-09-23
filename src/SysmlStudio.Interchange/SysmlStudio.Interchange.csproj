@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="SysML2.NET" />
+    <PackageReference Include="SysML2.NET.Dal" />
+    <PackageReference Include="SysML2.NET.Serializer.Json" />
+    <PackageReference Include="SysML2.NET.Serializer.Xmi" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SysmlStudio.Model\SysmlStudio.Model.csproj" />
+  </ItemGroup>
+
+</Project>

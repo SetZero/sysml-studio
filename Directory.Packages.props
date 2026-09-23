@@ -4,8 +4,12 @@
     <PackageVersion Include="Antlr4BuildTasks" Version="12.14.0" />
     <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1" />
 
-    <!-- Model interchange. -->
+    <!-- Model interchange: the SysML v2 metamodel, its JSON and XMI
+         serializers, and the POCO-to-DTO mapping the JSON side needs. -->
     <PackageVersion Include="SysML2.NET" Version="0.23.0" />
+    <PackageVersion Include="SysML2.NET.Dal" Version="0.23.0" />
+    <PackageVersion Include="SysML2.NET.Serializer.Json" Version="0.23.0" />
+    <PackageVersion Include="SysML2.NET.Serializer.Xmi" Version="0.23.0" />
 
     <!-- Layout. -->
     <PackageVersion Include="Microsoft.Msagl" Version="1.1.6" />
