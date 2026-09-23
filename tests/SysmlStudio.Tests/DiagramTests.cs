@@ -220,10 +220,10 @@ public sealed class DiagramTests
         for (var i = 0; i < group.Count; i++)
         {
             var node = group[i];
-            group.AddRange(diagram.Edges
+            group.AddRange([.. diagram.Edges
                 .Where(e => ReferenceEquals(e.Source, node) || ReferenceEquals(e.Target, node))
                 .Select(e => ReferenceEquals(e.Source, node) ? e.Target : e.Source)
-                .Where(n => !group.Contains(n)).Distinct().ToList());
+                .Where(n => !group.Contains(n)).Distinct()]);
         }
 
         var others = diagram.Nodes.Except(group).ToList();
