@@ -42,8 +42,8 @@ public static class FitToScreen
         var extent = editor.ItemsExtent;
         if (extent.Width > 0 && extent.Height > 0 && editor.Bounds.Width > 0)
         {
-            // Padded, so nothing lands under the breadcrumb or the zoom controls.
-            editor.FitToScreen(extent.Inflate(new Thickness(48, 64, 48, 56)));
+            // Padded, so nothing lands under the floating toolbar or the zoom figure.
+            editor.FitToScreen(extent.Inflate(new Thickness(56, 48, 56, 96)));
 
             // A small diagram fitted to a big canvas would be drawn at 300 per cent.
             // Nothing is shown larger than life: it is centred at 100 instead.

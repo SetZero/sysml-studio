@@ -17,7 +17,7 @@ actually changed.
 | `SysmlStudio.Model` — element tree, relations, name resolution | works |
 | `SysmlStudio.Diagrams` — the five diagram kinds, MSAGL layout | works |
 | `SysmlStudio.Editing` — edits as text patches | rename (every reference, across files), delete, add, set type, specialize, maturity, doc comment, and drawing connect / flow / succession / transition / satisfy / dependency / allocate / specialization / composition; each re-parsed before it is accepted |
-| `SysmlStudio.App` — the Avalonia application | ribbon, dockable panes, five diagram kinds, right-click menus on the tree and the canvas, edit dialogs with a preview of what will be written, a relation tool, undo/redo, source tabs; Save writes the changed files |
+| `SysmlStudio.App` — the Avalonia application | model tree, diagram tabs with a kind switcher, inspector, problems and usages, right-click menus on the tree and the canvas, edit dialogs that say what they will change, a relation tool, undo/redo, source tabs, SysML v2 JSON and XMI export; Save writes the changed files |
 
 Open a model folder:
 
@@ -25,14 +25,18 @@ Open a model folder:
 dotnet run --project src/SysmlStudio.App -- ../os/docs/sysml
 ```
 
-The project browser lists every package and element with its maturity bar;
-select one and the ribbon's Diagram kind group lights the diagrams that can be
-drawn of it. Right-click an element — in the tree or on a diagram — to add
-inside it, rename it, type it, mark it or delete it; each dialog shows the
-lines it will write before it writes them. Toolbox relations draw between two
-clicked boxes. Every edit is a patch over the text, re-parsed before it is
-accepted, kept in memory with undo until Save writes the changed files. With
-no folder given, the Start page offers the sample model in `samples/vehicle`.
+The model tree on the left lists every package and element; select one and
+the switcher in the title bar offers the diagram kinds that can be drawn of it
+(Definition, Interconnection, Requirements, Action, State), and the inspector
+on the right shows what it specializes and holds, its maturity and its doc
+comment. Right-click an element — in the tree or on a diagram — to add inside
+it, rename it, type it, mark it or delete it; each dialog says what it will
+change before it writes. The toolbar under a diagram adds elements and draws
+relations between two clicked boxes. Every edit is a patch over the text,
+re-parsed before it is accepted, kept in memory with undo until Save writes
+the changed files. Export writes the whole workspace as SysML v2 JSON or XMI.
+With no folder given, the window offers a folder picker, the recent folders
+and the sample model in `samples/vehicle`.
 
 What the model holds can also be printed without the window:
 
@@ -50,7 +54,7 @@ Nothing here reimplements what a library already does.
 | Lossless edits | ANTLR's `TokenStreamRewriter` over the token stream |
 | Model interchange | [`SysML2.NET`](https://github.com/STARIONGROUP/SysML2.NET) for JSON/XMI export |
 | Graph layout | [MSAGL](https://github.com/microsoft/automatic-graph-layout) |
-| UI | [Avalonia](https://avaloniaui.net) 12, `Dock.Avalonia` (panes), `Nodify.Avalonia` (canvas), `AvaloniaEdit` (source), `FluentIcons.Avalonia` |
+| UI | [Avalonia](https://avaloniaui.net) 12, `Nodify.Avalonia` (canvas), `AvaloniaEdit` (source), `FluentIcons.Avalonia` |
 | Type | IBM Plex Sans Condensed and IBM Plex Mono, bundled under the SIL Open Font Licence (`src/SysmlStudio.App/Assets/Fonts/OFL.txt`) |
 
 ## Building

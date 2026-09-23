@@ -229,7 +229,7 @@ public static class DiagramBuilder
                 toNode ??= Contains(root, to) ? RequirementNode(diagram, to) : null;
                 fromNode ??= RequirementNode(diagram, from);
                 if (toNode is not null && !ReferenceEquals(fromNode, toNode))
-                    diagram.Edges.Add(new DiagramEdge(fromNode, toNode, kind, label));
+                    diagram.Edges.Add(new DiagramEdge(fromNode, toNode, kind, TraceVerb(kind)) { Name = label });
             }
 
             return diagram;
@@ -247,7 +247,7 @@ public static class DiagramBuilder
             var fromNode = diagram.NodeFor(from) ?? RequirementNode(diagram, from);
             var toNode = diagram.NodeFor(to) ?? RequirementNode(diagram, to);
             if (!ReferenceEquals(fromNode, toNode))
-                diagram.Edges.Add(new DiagramEdge(fromNode, toNode, kind, label));
+                diagram.Edges.Add(new DiagramEdge(fromNode, toNode, kind, TraceVerb(kind)) { Name = label });
         }
 
         if (root.Relations.FirstOrDefault(r => r.Kind == RelationKind.Typing)?.Target is { } type)
@@ -255,6 +255,15 @@ public static class DiagramBuilder
 
         return diagram;
     }
+
+    /// <summary>What a trace arrow says, read from its tail to its head: "Scheduler satisfies S.1".</summary>
+    public static string TraceVerb(RelationKind kind) => kind switch
+    {
+        RelationKind.Satisfy => "satisfies",
+        RelationKind.Verify => "verifies",
+        RelationKind.Allocate => "allocated to",
+        _ => "depends on",
+    };
 
     /// <summary>
     /// Every trace link in the model as (kind, from, to): dependencies from
@@ -301,8 +310,7 @@ public static class DiagramBuilder
         if (diagram.NodeFor(element) is { } existing)
             return existing;
 
-        var label = element.ShortName is { } shortName && element.Name is { } name ? $"{name}  ‹{shortName}›" : element.DisplayName;
-        var node = new DiagramNode(element, label, $"«{element.Kind}»");
+        var node = new DiagramNode(element, element.DisplayName, $"«{element.Kind}»");
         if (element.Documentation is { Length: > 0 } doc)
             node.Features.Add(Shorten(doc));
         diagram.Nodes.Add(node);

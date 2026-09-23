@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+             x:Class="SysmlStudio.App.Views.ExportDialogView"
+             x:DataType="vm:ExportDialogViewModel">
+  <Border Width="420" Background="{DynamicResource SurfaceRaisedBrush}"
+          BoxShadow="0 12 40 0 #26000000" Padding="22,22,22,20">
+    <StackPanel Spacing="14">
+      <TextBlock Text="{Binding Title}" Classes="title" />
+
+      <!-- Format -->
+      <Border Classes="segmented">
+        <UniformGrid Rows="1">
+          <RadioButton Classes="segment" GroupName="format" IsChecked="{Binding IsJson}" Padding="8,7">
+            <TextBlock Text="SysML v2 JSON" FontSize="14" />
+          </RadioButton>
+          <RadioButton Classes="segment" GroupName="format" IsChecked="{Binding IsXmi}" Padding="8,7">
+            <TextBlock Text="XMI" FontSize="14" />
+          </RadioButton>
+        </UniformGrid>
+      </Border>
+
+      <!-- Where -->
+      <StackPanel Spacing="6">
+        <TextBlock Text="Save to" Classes="label" />
+        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="10,0,12,0" Height="36">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Text="{Binding Path}" FontFamily="{DynamicResource MonoFont}" FontSize="12.5"
+                     BorderThickness="0" Background="Transparent" Padding="0" VerticalContentAlignment="Center"
+                     MinHeight="0" />
+            <Button Grid.Column="1" Classes="link" Command="{Binding ChangeCommand}" VerticalAlignment="Center">
+              <TextBlock Text="Change" FontSize="13" Classes="link" />
+            </Button>
+          </Grid>
+        </Border>
+      </StackPanel>
+
+      <TextBlock Text="{Binding Scope}" Classes="muted" FontSize="13.5" />
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,4,0,0">
+        <Button Classes="outline strong" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Padding="13,7" />
+        <Button Classes="primary" Content="{Binding ConfirmText}" Command="{Binding ConfirmCommand}" IsDefault="True" />
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

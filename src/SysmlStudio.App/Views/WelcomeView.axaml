@@ -5,50 +5,35 @@
              x:Class="SysmlStudio.App.Views.WelcomeView"
              x:DataType="vm:WelcomeViewModel"
              Background="{DynamicResource CanvasBrush}">
-  <Border Width="520" HorizontalAlignment="Center" VerticalAlignment="Center"
-          Background="{DynamicResource SurfaceRaisedBrush}"
-          BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="30,28">
-    <Panel>
-    <StackPanel Spacing="6" IsVisible="{Binding IsModelOpen}">
-      <TextBlock Text="MODEL OPEN" Classes="caption" />
-      <TextBlock Text="{Binding OpenFolderName}" Classes="mono" FontSize="20" Margin="0,4,0,6" TextTrimming="PathSegmentEllipsis" />
-      <TextBlock Classes="muted" FontSize="14" TextWrapping="Wrap" LineHeight="21"
-                 Text="Pick an element in the project browser, then a diagram kind in the ribbon. Problems are listed below; click one to open the file at that line." />
-    </StackPanel>
-    <StackPanel Spacing="6" IsVisible="{Binding IsEmpty}">
-      <TextBlock Text="NO MODEL OPEN" Classes="caption" />
-      <TextBlock FontSize="30" FontWeight="Medium" Margin="0,4,0,6">
-        <Run Text="Open a folder of " /><Run Text=".sysml" FontFamily="{DynamicResource MonoFont}" FontSize="26" /><Run Text=" files" />
-      </TextBlock>
-      <TextBlock Classes="muted" FontSize="14" TextWrapping="Wrap" LineHeight="21"
-                 Text="One folder is one workspace. Every file is parsed on open; the text stays the source of truth, and each edit is written back as a minimal patch." />
+  <StackPanel Width="380" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+    <TextBlock Text="Open a workspace" FontSize="30" />
+    <TextBlock Classes="muted" FontSize="14.5" TextWrapping="Wrap" LineHeight="21"
+               Text="Choose a folder of .sysml files. The text stays the source of truth." />
 
-      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,16,0,6">
-        <Button Classes="primary" Content="Open folder…" Command="{Binding OpenFolderCommand}" />
-        <Button Classes="outline" Content="Open sample model" Command="{Binding OpenSampleCommand}"
-                IsVisible="{x:Static vm:WelcomeViewModel.HasSample}" HorizontalAlignment="Left" />
-      </StackPanel>
-
-      <StackPanel Spacing="6" Margin="0,16,0,0" IsVisible="{Binding HasRecent}">
-        <TextBlock Text="RECENT" Classes="caption" />
-        <ItemsControl ItemsSource="{Binding Recent}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="svc:RecentFolder">
-              <Button Classes="outline" Margin="0,0,0,6"
-                      Command="{Binding $parent[ItemsControl].((vm:WelcomeViewModel)DataContext).OpenRecentCommand}"
-                      CommandParameter="{Binding}" HorizontalContentAlignment="Stretch">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="{Binding Path}" Classes="mono" FontSize="12.5" TextTrimming="PathSegmentEllipsis" />
-                  <TextBlock Grid.Column="1" Classes="mono faint" FontSize="12" Margin="12,0,0,0">
-                    <Run Text="{Binding FileCount}" /><Run Text=" files" />
-                  </TextBlock>
-                </Grid>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,18,0,0">
+      <Button Classes="primary" Content="Open folder…" Command="{Binding OpenFolderCommand}" />
+      <Button Classes="outline strong" Content="Try sample" Command="{Binding OpenSampleCommand}" Padding="12,7"
+              IsVisible="{x:Static vm:WelcomeViewModel.HasSample}" />
     </StackPanel>
-    </Panel>
-  </Border>
+
+    <StackPanel Spacing="2" Margin="0,26,0,0" IsVisible="{Binding HasRecent}">
+      <TextBlock Text="RECENT" Classes="caption" Margin="0,0,0,8" />
+      <ItemsControl ItemsSource="{Binding Recent}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="svc:RecentFolder">
+            <Button Classes="flat row" Padding="0,9"
+                    Command="{Binding $parent[ItemsControl].((vm:WelcomeViewModel)DataContext).OpenRecentCommand}"
+                    CommandParameter="{Binding}" ToolTip.Tip="{Binding Path}">
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="{Binding Name}" FontSize="14.5" Foreground="{DynamicResource TextBrush}" />
+                <TextBlock Grid.Column="1" Text="{Binding ShortPath}" Classes="mono faint" FontSize="12"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="24,0,0,0"
+                           TextTrimming="PathSegmentEllipsis" />
+              </Grid>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </StackPanel>
 </UserControl>

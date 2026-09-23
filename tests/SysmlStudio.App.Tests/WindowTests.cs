@@ -87,7 +87,8 @@ public sealed class WindowTests
         Shoot(window, "empty");
 
         Assert.False(shell.HasWorkspace);
-        Assert.Same(shell.Welcome, shell.ActiveDocument ?? shell.Welcome);
+        Assert.Null(shell.ActiveDocument);
+        Assert.Equal("Ready", shell.SaveState);
     }
 
     [AvaloniaFact]
@@ -98,7 +99,8 @@ public sealed class WindowTests
 
         Assert.True(shell.HasWorkspace);
         Assert.NotEmpty(shell.Browser.Roots);
-        Assert.StartsWith("indexed", shell.IndexedSummary, StringComparison.Ordinal);
+        Assert.Equal("Saved", shell.SaveState);
+        Assert.Contains("file", shell.Browser.FilesText, StringComparison.Ordinal);
     }
 
     [AvaloniaFact]
@@ -136,8 +138,11 @@ public sealed class WindowTests
         Shoot(window, "properties");
 
         Assert.Equal("Engine", shell.Properties.Name);
-        Assert.Contains(shell.Properties.Rows, r => r.Name == "Short name");
+        Assert.Equal("Part definition · P.1", shell.Properties.KindCaption);
+        Assert.Equal("Used in 1 place", shell.Properties.UsedIn);
+        Assert.True(shell.Bottom.IsOpen);
         Assert.Equal(2, shell.Bottom.Usages.Count); // the declaration, and "engine : Engine"
+        Assert.Equal(["declared", "typed by"], shell.Bottom.Usages.Select(u => u.Usage));
     }
 
     [AvaloniaFact]
@@ -154,12 +159,32 @@ public sealed class WindowTests
         source.Text.Insert(source.Text.TextLength, "\npackage Broken {");
         Assert.True(source.IsDirty);
         source.FlushPendingReparse(); // the real editor waits a quarter of a second after the last keystroke
+        source.GoToLine(source.ErrorLine);
         Settle();
         Shoot(window, "source");
 
         Assert.True(source.HasErrors);
         Assert.True(source.IsDirty);
+        Assert.True(source.HasDot);
+        Assert.Equal("Unexpected end of file", source.ErrorMessage);
         Assert.True(shell.ErrorCount > 0);
+        Assert.False(shell.ShowsKinds); // the switcher is for diagrams
+
+        shell.ToggleProblemsCommand.Execute(null);
+        Settle();
+        Shoot(window, "problems");
+        Assert.True(shell.Bottom.IsOpen);
+        Assert.True(shell.Bottom.ShowsProblems);
+    }
+
+    /// <summary>The parser's messages, as the error box and the problems list word them.</summary>
+    [AvaloniaFact]
+    public void ParserMessagesAreShortened()
+    {
+        Assert.Equal("Expected ';'", SourceDocumentViewModel.Shorten("missing ';' at '}' expecting ';'"));
+        Assert.Equal("Expected ';' or '{'", SourceDocumentViewModel.Shorten("mismatched input 'x' expecting {';', '{'}"));
+        Assert.Equal("Unexpected 'x'", SourceDocumentViewModel.Shorten("extraneous input 'x' expecting {'a', 'b', 'c', 'd'}"));
+        Assert.Equal("unresolved reference 'X'", SourceDocumentViewModel.Shorten("unresolved reference 'X'"));
     }
 
     [AvaloniaFact]
@@ -288,5 +313,80 @@ public sealed class WindowTests
         shell.Select(workspace.Find("Sample::MustStart")!);
         Settle();
         Assert.Equal(DiagramKind.Requirements, Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument).Diagram.Kind);
+    }
+
+    /// <summary>The title bar's switcher redraws the tab in front as another kind of diagram.</summary>
+    [AvaloniaFact]
+    public void TheSwitcherRedrawsTheTabAsAnotherKind()
+    {
+        var (window, shell) = Open(Fixture);
+        shell.Select(shell.Workspace!.Find("Sample")!);
+        shell.OpenDiagramCommand.Execute(DiagramKind.Definition);
+        Settle();
+
+        var requirements = shell.DiagramKinds.Single(k => k.Kind == DiagramKind.Requirements);
+        var state = shell.DiagramKinds.Single(k => k.Kind == DiagramKind.StateMachine);
+        Assert.True(requirements.IsAvailable);
+        Assert.False(state.IsAvailable); // a package has no states of its own
+        Assert.True(shell.DiagramKinds.Single(k => k.Kind == DiagramKind.Definition).IsActive);
+
+        shell.SwitchKindCommand.Execute(requirements);
+        Settle();
+        Shoot(window, "switched-requirements");
+
+        Assert.Single(shell.Documents);
+        Assert.Equal(DiagramKind.Requirements, shell.ActiveKind);
+        Assert.True(requirements.IsActive);
+        Assert.Equal("Sample · Requirements", shell.DocumentCaption);
+        var diagram = Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
+        Assert.Contains(diagram.Connections, c => c.Label == "satisfies");
+    }
+
+    /// <summary>Tabs: a source tab opens beside the diagram, and closing the one in front shows its neighbour.</summary>
+    [AvaloniaFact]
+    public void TabsOpenAndClose()
+    {
+        var (_, shell) = Open(Fixture);
+        shell.Select(shell.Workspace!.Find("Sample")!);
+        shell.OpenDiagramCommand.Execute(DiagramKind.Definition);
+        shell.OpenSource(shell.Workspace!.Files.First().Path);
+        Settle();
+
+        Assert.Equal(2, shell.Documents.Count);
+        var source = Assert.IsType<SourceDocumentViewModel>(shell.ActiveDocument);
+        Assert.True(source.IsActive);
+        Assert.False(shell.Documents[0].IsActive);
+
+        shell.CloseDocumentCommand.Execute(source);
+        Settle();
+        Assert.Single(shell.Documents);
+        Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
+        Assert.True(shell.Documents[0].IsActive);
+    }
+
+    /// <summary>The export dialog offers both formats and follows the format with the file name.</summary>
+    [AvaloniaFact]
+    public void TheExportDialogOffersJsonAndXmi()
+    {
+        var (window, shell) = Open(Fixture);
+        shell.Select(shell.Workspace!.Find("Sample")!);
+        shell.OpenDiagramCommand.Execute(DiagramKind.Requirements);
+        Settle();
+
+        _ = shell.ExportCommand.ExecuteAsync(null);
+        Settle();
+        var dialog = Assert.IsType<ExportDialogViewModel>(shell.Dialog);
+        Shoot(window, "export");
+
+        Assert.True(dialog.IsJson);
+        Assert.Equal("export/fixtures.json", dialog.Path);
+        dialog.IsXmi = true;
+        Assert.Equal("export/fixtures.xmi", dialog.Path);
+        Assert.Equal(Path.Combine(Fixture, "export", "fixtures.xmi"), dialog.FullPath);
+        Assert.Equal("Whole workspace · 1 file", dialog.Scope);
+
+        dialog.CancelCommand.Execute(null);
+        Settle();
+        Assert.Null(shell.Dialog);
     }
 }

@@ -3,86 +3,81 @@
              xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
              x:Class="SysmlStudio.App.Views.EditDialogView"
              x:DataType="vm:DialogViewModel">
-  <!-- The one modal every edit uses: caption, title, the fields that edit
-       needs, a preview of what it will write, and why it cannot when it cannot. -->
-  <Border Width="620" HorizontalAlignment="Center" VerticalAlignment="Center"
-          Background="{DynamicResource SurfaceRaisedBrush}"
-          BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
-          BoxShadow="0 12 40 0 #33000000">
-    <DockPanel>
-      <!-- Buttons -->
-      <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="18,12">
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-          <Button Classes="outline" Content="Cancel" Command="{Binding CancelCommand}" IsVisible="{Binding ShowCancel}"
-                  HorizontalAlignment="Right" IsCancel="True" />
-          <Button Classes="primary" Content="{Binding ConfirmText}" Command="{Binding ConfirmCommand}" IsDefault="True"
-                  Classes.danger="{Binding IsDanger}" />
-        </StackPanel>
+  <!-- The one modal every edit uses: a title, the fields that edit needs,
+       what it will change, and why it cannot when it cannot. -->
+  <Border Width="420" Background="{DynamicResource SurfaceRaisedBrush}"
+          BoxShadow="0 12 40 0 #26000000" Padding="22,22,22,20">
+    <StackPanel Spacing="14">
+      <TextBlock Text="{Binding Title}" Classes="title" TextWrapping="Wrap" />
+
+      <!-- Name -->
+      <StackPanel Spacing="6" IsVisible="{Binding ShowName}">
+        <TextBlock Text="{Binding NameLabel}" Classes="label" IsVisible="{Binding ShowNameLabel}" />
+        <TextBox x:Name="NameBox" Classes="field" Text="{Binding Name}" FontFamily="{DynamicResource MonoFont}" FontSize="13.5" />
+      </StackPanel>
+
+      <!-- Kind -->
+      <StackPanel Spacing="6" IsVisible="{Binding ShowKind}">
+        <TextBlock Text="Kind" Classes="label" />
+        <ComboBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding Kind}" HorizontalAlignment="Stretch" />
+      </StackPanel>
+
+      <!-- A reference to another element: type, supertype, requirement -->
+      <StackPanel Spacing="6" IsVisible="{Binding ShowType}">
+        <TextBlock Text="{Binding TypeLabel}" Classes="label" />
+        <AutoCompleteBox ItemsSource="{Binding TypeChoices}" Text="{Binding TypeText, Mode=TwoWay}"
+                         FilterMode="ContainsOrdinal" MinimumPrefixLength="0" MaxDropDownHeight="260"
+                         FontFamily="{DynamicResource MonoFont}" PlaceholderText="Start typing a name…" />
+      </StackPanel>
+
+      <!-- Free text -->
+      <StackPanel Spacing="6" IsVisible="{Binding ShowText}">
+        <TextBlock Text="{Binding TextLabel}" Classes="label" />
+        <TextBox Classes="field" Text="{Binding Text}" AcceptsReturn="True" TextWrapping="Wrap" Height="110"
+                 VerticalContentAlignment="Top" />
+      </StackPanel>
+
+      <!-- What it will do, in words -->
+      <StackPanel Spacing="4" IsVisible="{Binding HasExplanation}">
+        <TextBlock Text="{Binding Explanation}" Classes="muted" FontSize="13.5" TextWrapping="Wrap" LineHeight="20"
+                   IsVisible="{Binding Explanation, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <TextBlock Text="{Binding Summary}" Classes="muted" FontSize="13.5" TextWrapping="Wrap" LineHeight="20" />
+      </StackPanel>
+
+      <!-- Per file: how many references a rename changes there -->
+      <ItemsControl ItemsSource="{Binding Files}" IsVisible="{Binding ShowFiles}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:FileChange">
+            <Grid ColumnDefinitions="*,Auto" Height="21">
+              <TextBlock Text="{Binding File}" Classes="mono" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="1" Text="{Binding Count}" Classes="mono muted" FontSize="12" VerticalAlignment="Center" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <!-- The lines an edit will write -->
+      <Border Background="{DynamicResource CanvasBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+              Padding="10,8" MaxHeight="190" IsVisible="{Binding ShowPreview}">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding Preview}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" Classes="mono" FontSize="11.5" LineHeight="18" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
       </Border>
 
-      <StackPanel Margin="20,18,20,16" Spacing="12">
-        <StackPanel Spacing="4">
-          <TextBlock Text="{Binding Caption}" Classes="caption" />
-          <TextBlock Text="{Binding Title}" FontSize="21" FontWeight="Medium" TextWrapping="Wrap" />
-        </StackPanel>
+      <TextBlock Text="{Binding Message}" Classes="error" FontSize="13.5" TextWrapping="Wrap" IsVisible="{Binding HasMessage}" />
 
-        <!-- Name, with the current one beside it when renaming -->
-        <Grid ColumnDefinitions="*,14,*" IsVisible="{Binding ShowName}">
-          <StackPanel Spacing="5" IsVisible="{Binding ShowCurrentName}">
-            <TextBlock Text="CURRENT" Classes="caption" />
-            <TextBox Classes="field" Text="{Binding CurrentName}" IsReadOnly="True" Foreground="{DynamicResource TextMutedBrush}"
-                     FontFamily="{DynamicResource MonoFont}" />
-          </StackPanel>
-          <StackPanel Grid.Column="2" Spacing="5">
-            <TextBlock Text="{Binding NameLabel}" Classes="caption" />
-            <TextBox x:Name="NameBox" Classes="field" Text="{Binding Name}" FontFamily="{DynamicResource MonoFont}" />
-          </StackPanel>
-        </Grid>
-
-        <!-- Kind -->
-        <StackPanel Spacing="5" IsVisible="{Binding ShowKind}">
-          <TextBlock Text="KIND" Classes="caption" />
-          <ComboBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding Kind}" HorizontalAlignment="Stretch"
-                    FontFamily="{DynamicResource MonoFont}" />
-        </StackPanel>
-
-        <!-- A reference to another element: type, supertype, requirement -->
-        <StackPanel Spacing="5" IsVisible="{Binding ShowType}">
-          <TextBlock Text="{Binding TypeLabel}" Classes="caption" />
-          <AutoCompleteBox ItemsSource="{Binding TypeChoices}" Text="{Binding TypeText, Mode=TwoWay}"
-                           FilterMode="ContainsOrdinal" MinimumPrefixLength="0" MaxDropDownHeight="260"
-                           FontFamily="{DynamicResource MonoFont}" PlaceholderText="start typing a name…" />
-        </StackPanel>
-
-        <!-- Free text -->
-        <StackPanel Spacing="5" IsVisible="{Binding ShowText}">
-          <TextBlock Text="{Binding TextLabel}" Classes="caption" />
-          <TextBox Classes="field" Text="{Binding Text}" AcceptsReturn="True" TextWrapping="Wrap" Height="110" />
-        </StackPanel>
-
-        <!-- What will be written -->
-        <StackPanel Spacing="5" IsVisible="{Binding ShowPreview}">
-          <TextBlock Classes="caption">
-            <Run Text="PATCH PREVIEW · " /><Run Text="{Binding Preview.Count}" /><Run Text=" LINES" />
-          </TextBlock>
-          <Border Background="{DynamicResource CanvasBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                  Padding="10,8" MaxHeight="190">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto">
-              <ItemsControl ItemsSource="{Binding Preview}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <TextBlock Text="{Binding}" Classes="mono" FontSize="12" LineHeight="19" />
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </ScrollViewer>
-          </Border>
-        </StackPanel>
-
-        <TextBlock Text="{Binding Message}" Classes="error" FontSize="13" TextWrapping="Wrap" IsVisible="{Binding HasMessage}" />
-        <TextBlock Text="{Binding Explanation}" Classes="mono faint" FontSize="11" TextWrapping="Wrap"
-                   IsVisible="{Binding Explanation, Converter={x:Static ObjectConverters.IsNotNull}}" />
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,4,0,0">
+        <Button Classes="outline strong" Content="Cancel" Command="{Binding CancelCommand}" IsVisible="{Binding ShowCancel}"
+                IsCancel="True" Padding="13,7" />
+        <Button Classes="primary" Classes.danger="{Binding IsDanger}" Content="{Binding ConfirmText}"
+                Command="{Binding ConfirmCommand}" IsDefault="True" />
       </StackPanel>
-    </DockPanel>
+    </StackPanel>
   </Border>
 </UserControl>

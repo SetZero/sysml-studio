@@ -3,6 +3,7 @@
              xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
              xmlns:views="clr-namespace:SysmlStudio.App.Views"
              xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
+             xmlns:ic="using:FluentIcons.Avalonia"
              x:Class="SysmlStudio.App.Views.DiagramDocumentView"
              x:DataType="vm:DiagramDocumentViewModel">
 
@@ -10,21 +11,25 @@
     <!-- Relations drawn UML's way, along the route MSAGL found around the
          boxes: a hollow triangle for specialization, a filled diamond at the
          owner for composition, a dashed line and open head for the trace
-         relations, a filled head for the rest. -->
+         relations, small circles where a connection meets a part. -->
     <Style Selector="Path.edge">
-      <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
-      <Setter Property="StrokeThickness" Value="1.3" />
+      <Setter Property="Stroke" Value="{DynamicResource EdgeBrush}" />
+      <Setter Property="StrokeThickness" Value="1.2" />
       <Setter Property="StrokeLineCap" Value="Round" />
       <Setter Property="StrokeJoin" Value="Round" />
     </Style>
     <Style Selector="Path.edge.dashed">
-      <Setter Property="StrokeDashArray" Value="5,4" />
+      <Setter Property="StrokeDashArray" Value="4,3" />
+    </Style>
+    <Style Selector="Path.hit">
+      <Setter Property="Stroke" Value="Transparent" />
+      <Setter Property="StrokeThickness" Value="10" />
     </Style>
     <Style Selector="Path.head">
-      <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
-      <Setter Property="StrokeThickness" Value="1.3" />
+      <Setter Property="Stroke" Value="{DynamicResource EdgeBrush}" />
+      <Setter Property="StrokeThickness" Value="1.2" />
       <Setter Property="StrokeJoin" Value="Miter" />
-      <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
+      <Setter Property="Fill" Value="{DynamicResource EdgeBrush}" />
     </Style>
     <Style Selector="Path.head.hollow">
       <Setter Property="Fill" Value="{DynamicResource CanvasBrush}" />
@@ -33,62 +38,58 @@
       <Setter Property="Fill" Value="Transparent" />
     </Style>
     <Style Selector="Path.tail">
-      <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
+      <Setter Property="Fill" Value="{DynamicResource EdgeBrush}" />
+    </Style>
+    <Style Selector="Path.ports">
+      <Setter Property="Fill" Value="{DynamicResource SurfaceRaisedBrush}" />
+      <Setter Property="Stroke" Value="{DynamicResource EdgeBrush}" />
+      <Setter Property="StrokeThickness" Value="1.2" />
     </Style>
   </UserControl.Styles>
 
-  <Grid ColumnDefinitions="156,*">
+  <Panel Background="{DynamicResource CanvasBrush}">
+    <nodify:NodifyEditor x:Name="Editor"
+                         ContextRequested="OnContextRequested"
+                         ItemsSource="{Binding Nodes}"
+                         Connections="{Binding Connections}"
+                         ViewportZoom="{Binding Zoom, Mode=TwoWay}"
+                         GridCellSize="8"
+                         ItemsDragCompletedCommand="{Binding DragCompletedCommand}"
+                         views:FitToScreen.OnShow="True">
+      <!-- The dotted grid, moving and scaling with the diagram. -->
+      <nodify:NodifyEditor.Background>
+        <DrawingBrush TileMode="Tile" Stretch="None" DestinationRect="0,0,20,20" SourceRect="0,0,20,20"
+                      Transform="{Binding #Editor.ViewportTransform}">
+          <DrawingBrush.Drawing>
+            <DrawingGroup>
+              <GeometryDrawing Brush="Transparent" Geometry="M0,0 H20 V20 H0 Z" />
+              <GeometryDrawing Brush="{DynamicResource CanvasGridBrush}">
+                <GeometryDrawing.Geometry>
+                  <EllipseGeometry Center="1,1" RadiusX="1" RadiusY="1" />
+                </GeometryDrawing.Geometry>
+              </GeometryDrawing>
+            </DrawingGroup>
+          </DrawingBrush.Drawing>
+        </DrawingBrush>
+      </nodify:NodifyEditor.Background>
 
-    <!-- Toolbox -->
-    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
-      <DockPanel Margin="10,12,10,10">
-        <TextBlock DockPanel.Dock="Top" Text="TOOLBOX" Classes="caption" Margin="0,0,0,10" />
-        <TextBlock DockPanel.Dock="Bottom" Classes="mono faint" FontSize="11" TextWrapping="Wrap"
-                   Text="an element: adds it · a relation: click the source box, then the target" />
-        <ItemsControl ItemsSource="{Binding Toolbox}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:ToolboxItem">
-              <Button Classes="outline" Margin="0,0,0,7" Click="OnToolboxClick"
-                      ToolTip.Tip="{Binding IsRelation, Converter={x:Static views:ToolboxTip.Instance}}">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <TextBlock Text="→" Classes="faint" IsVisible="{Binding IsRelation}" />
-                  <TextBlock Text="{Binding Label}" />
-                </StackPanel>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </DockPanel>
-    </Border>
+      <nodify:NodifyEditor.ItemContainerTheme>
+        <ControlTheme TargetType="nodify:ItemContainer"
+                      BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"
+                      x:DataType="vm:DiagramNodeViewModel">
+          <Setter Property="Location" Value="{Binding Location, Mode=TwoWay}" />
+          <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+          <Setter Property="BorderBrush" Value="Transparent" />
+          <Setter Property="BorderThickness" Value="0" />
+          <Setter Property="HighlightBrush" Value="Transparent" />
+          <Setter Property="SelectedBrush" Value="{DynamicResource NodeSelectedBrush}" />
+          <Setter Property="SelectedBorderThickness" Value="1" />
+        </ControlTheme>
+      </nodify:NodifyEditor.ItemContainerTheme>
 
-    <!-- Canvas -->
-    <Panel Grid.Column="1" Background="{DynamicResource CanvasBrush}">
-      <nodify:NodifyEditor x:Name="Editor"
-                           ContextRequested="OnContextRequested"
-                           ItemsSource="{Binding Nodes}"
-                           Connections="{Binding Connections}"
-                           ViewportZoom="{Binding Zoom, Mode=TwoWay}"
-                           GridCellSize="8"
-                           ItemsDragCompletedCommand="{Binding DragCompletedCommand}"
-                           Background="Transparent"
-                           views:FitToScreen.OnShow="True">
-        <nodify:NodifyEditor.ItemContainerTheme>
-          <ControlTheme TargetType="nodify:ItemContainer"
-                        BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"
-                        x:DataType="vm:DiagramNodeViewModel">
-            <Setter Property="Location" Value="{Binding Location, Mode=TwoWay}" />
-            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="HighlightBrush" Value="{DynamicResource BorderStrongBrush}" />
-            <Setter Property="SelectedBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="SelectedBorderThickness" Value="2" />
-          </ControlTheme>
-        </nodify:NodifyEditor.ItemContainerTheme>
-
-        <nodify:NodifyEditor.ItemTemplate>
-          <DataTemplate x:DataType="vm:DiagramNodeViewModel">
-            <Panel>
+      <nodify:NodifyEditor.ItemTemplate>
+        <DataTemplate x:DataType="vm:DiagramNodeViewModel">
+          <Panel>
             <!-- start and done: UML's initial and final nodes -->
             <Panel Width="{Binding Width}" Height="{Binding Height}" IsVisible="{Binding IsPseudo}">
               <Ellipse Width="18" Height="18" Fill="{DynamicResource TextMutedBrush}" IsVisible="{Binding IsStart}" />
@@ -97,73 +98,89 @@
             </Panel>
             <Border Width="{Binding Width}" MinHeight="{Binding Height}" IsVisible="{Binding IsBox}"
                     Background="{DynamicResource SurfaceRaisedBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-              <DockPanel>
-                <Border DockPanel.Dock="Left" Width="3" views:MaturityPaint.Background="{Binding Maturity}" />
-                <StackPanel>
-                  <StackPanel Margin="12,9,12,9" Spacing="3">
-                    <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Text="{Binding KindCaption}" Classes="caption" />
-                      <TextBlock Grid.Column="1" Text="{Binding ShortName}" Classes="mono faint" FontSize="11" />
-                    </Grid>
-                    <TextBlock Text="{Binding Title}" FontSize="16" TextTrimming="CharacterEllipsis" />
-                  </StackPanel>
-                  <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
-                          Padding="12,7,12,9" IsVisible="{Binding HasFeatures}">
-                    <ItemsControl ItemsSource="{Binding Features}">
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                          <TextBlock Text="{Binding}" Classes="mono muted" FontSize="12" LineHeight="19"
-                                     TextTrimming="CharacterEllipsis" />
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </Border>
+                    BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1">
+              <StackPanel>
+                <StackPanel Margin="14,11,14,12" Spacing="3">
+                  <TextBlock Text="{Binding KindCaption}" Classes="faint" FontSize="12" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding Title}" FontSize="16" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding Documentation}" Classes="muted" FontSize="13.5" TextWrapping="Wrap"
+                             LineHeight="20" MaxHeight="80" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"
+                             IsVisible="{Binding HasDocumentation}" />
                 </StackPanel>
-              </DockPanel>
+                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+                        Padding="14,7,14,9" IsVisible="{Binding HasFeatures}">
+                  <ItemsControl ItemsSource="{Binding Features}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding}" Classes="mono muted" FontSize="12" LineHeight="19"
+                                   TextTrimming="CharacterEllipsis" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </Border>
+              </StackPanel>
             </Border>
-            </Panel>
-          </DataTemplate>
-        </nodify:NodifyEditor.ItemTemplate>
+          </Panel>
+        </DataTemplate>
+      </nodify:NodifyEditor.ItemTemplate>
 
+      <nodify:NodifyEditor.ConnectionTemplate>
+        <DataTemplate x:DataType="vm:DiagramConnectionViewModel">
+          <Panel>
+            <Path Classes="edge" Classes.dashed="{Binding IsDashed}" Data="{Binding Line}" IsHitTestVisible="False" />
+            <Path Classes="hit" Data="{Binding Line}" ToolTip.Tip="{Binding Description}" ToolTip.ShowDelay="150" />
+            <Path Classes="head" Classes.hollow="{Binding IsGeneralization}" Classes.open="{Binding IsOpenHead}"
+                  Data="{Binding Head}" IsHitTestVisible="False" />
+            <Path Classes="tail" Data="{Binding Tail}" IsHitTestVisible="False" />
+            <Path Classes="ports" Data="{Binding Ports}" IsHitTestVisible="False" />
+            <!-- The label lives in the connection's own layer, so it scales
+                 with the diagram and sits where MSAGL placed it. -->
+            <Canvas IsVisible="{Binding ShowsLabel}" IsHitTestVisible="False">
+              <Border Canvas.Left="{Binding LabelLocation.X}" Canvas.Top="{Binding LabelLocation.Y}"
+                      Background="{DynamicResource CanvasBrush}" Padding="3,0">
+                <TextBlock Text="{Binding Label}" Classes="faint" FontSize="12" />
+              </Border>
+            </Canvas>
+          </Panel>
+        </DataTemplate>
+      </nodify:NodifyEditor.ConnectionTemplate>
+    </nodify:NodifyEditor>
 
-        <nodify:NodifyEditor.ConnectionTemplate>
-          <DataTemplate x:DataType="vm:DiagramConnectionViewModel">
-            <Panel ToolTip.Tip="{Binding Description}" Background="Transparent">
-              <Path Classes="edge" Classes.dashed="{Binding IsDashed}" Data="{Binding Line}" />
-              <Path Classes="head" Classes.hollow="{Binding IsGeneralization}" Classes.open="{Binding IsOpenHead}"
-                    Data="{Binding Head}" />
-              <Path Classes="tail" Data="{Binding Tail}" />
-              <!-- The label lives in the connection's own layer, so it scales
-                   with the diagram and sits where MSAGL placed it. -->
-              <Canvas IsVisible="{Binding ShowsLabel}" IsHitTestVisible="False">
-                <TextBlock Canvas.Left="{Binding LabelLocation.X}" Canvas.Top="{Binding LabelLocation.Y}"
-                           Text="{Binding Label}" Classes="mono muted" FontSize="11" />
-              </Canvas>
-            </Panel>
-          </DataTemplate>
-        </nodify:NodifyEditor.ConnectionTemplate>
-      </nodify:NodifyEditor>
-
-      <!-- What this is of -->
-      <Border HorizontalAlignment="Left" VerticalAlignment="Top" Padding="20,12"
-              Background="{DynamicResource CanvasBrush}" IsHitTestVisible="False">
-        <TextBlock Text="{Binding Breadcrumb}" Classes="mono muted" FontSize="12.5" />
-      </Border>
-
-      <!-- Zoom -->
-      <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Orientation="Horizontal"
-                  Spacing="6" Margin="14">
-        <Button Classes="outline" Padding="8,3" Command="{Binding ZoomOutCommand}" Content="−" />
-        <Border Classes="chip plain" BorderBrush="{DynamicResource BorderBrush}"
-                Background="{DynamicResource SurfaceRaisedBrush}" Padding="10,4">
-          <TextBlock Text="{Binding ZoomText}" />
-        </Border>
-        <Button Classes="outline" Padding="8,3" Command="{Binding ZoomInCommand}" Content="+" />
-        <Button Classes="outline" Padding="10,3" Command="{Binding RelayoutCommand}" ToolTip.Tip="Lay out again">
-          <TextBlock Text="MSAGL sugiyama" Classes="mono muted" FontSize="11.5" />
+    <!-- The toolbar: pointer, what can be added or drawn here, auto-layout -->
+    <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18"
+            Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1" Padding="4" BoxShadow="0 2 10 0 #18000000">
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button Classes="flat" Classes.active="{Binding IsPointer}" Padding="7,5" ToolTip.Tip="Select and move (Esc)"
+                Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).CancelToolCommand}">
+          <ic:SymbolIcon Symbol="Cursor" FontSize="16" />
+        </Button>
+        <ItemsControl ItemsSource="{Binding Toolbox}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="2" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ToolboxItem">
+              <Button Classes="flat" Classes.active="{Binding IsActive}" Padding="10,5" Click="OnToolboxClick"
+                      ToolTip.Tip="{Binding Tip}">
+                <TextBlock Text="{Binding Label}" FontSize="14" Foreground="{DynamicResource TextMutedBrush}" />
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Border Width="1" Margin="6,4" Background="{DynamicResource BorderBrush}" />
+        <Button Classes="flat" Padding="10,5" Command="{Binding RelayoutCommand}" ToolTip.Tip="Lay the diagram out again">
+          <TextBlock Text="Auto-layout" FontSize="14" Foreground="{DynamicResource TextMutedBrush}" />
         </Button>
       </StackPanel>
-    </Panel>
-  </Grid>
+    </Border>
+
+    <!-- Zoom -->
+    <Button Classes="link" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,18,14"
+            Command="{Binding FitCommand}" ToolTip.Tip="Fit to view (Ctrl+0)">
+      <TextBlock Text="{Binding ZoomText}" Classes="mono faint" FontSize="12" />
+    </Button>
+  </Panel>
 </UserControl>

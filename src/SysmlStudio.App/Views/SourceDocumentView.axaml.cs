@@ -1,26 +1,35 @@
 using System.ComponentModel;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using AvaloniaEdit;
 using SysmlStudio.App.ViewModels;
 
 namespace SysmlStudio.App.Views;
 
-/// <summary>A .sysml file as text: highlighted, squiggled where it does not parse, editable.</summary>
+/// <summary>
+/// A .sysml file as text: highlighted, squiggled where it does not parse,
+/// with the first error spelled out in a box under its line, editable.
+/// </summary>
 public sealed partial class SourceDocumentView : UserControl
 {
     private SourceDocumentViewModel? _viewModel;
     private ErrorSquiggles? _squiggles;
+    private ErrorBox? _errorBox;
 
     public SourceDocumentView()
     {
         InitializeComponent();
         DataContextChanged += (_, _) => Wire();
-        ActualThemeVariantChanged += (_, _) => Recolour();
+        ActualThemeVariantChanged += (_, _) => Wire();
         Editor.TextArea.Caret.PositionChanged += (_, _) => ReportCaret();
-        Editor.TextArea.SelectionBrush = new SolidColorBrush(Color.FromArgb(0x40, 0x56, 0x75, 0x9B));
+        Editor.TextArea.SelectionBrush = new SolidColorBrush(Color.FromArgb(0x40, 0x64, 0x82, 0xA9));
+        Editor.TextArea.TextView.SizeChanged += (_, _) => FitErrorBox();
+
+        // Room between the line numbers and the text, and no rule between them.
+        foreach (var margin in Editor.TextArea.LeftMargins.OfType<AvaloniaEdit.Editing.LineNumberMargin>())
+            margin.Margin = new Avalonia.Thickness(0, 0, 18, 0);
+        foreach (var rule in Editor.TextArea.LeftMargins.OfType<Avalonia.Controls.Shapes.Line>())
+            rule.IsVisible = false;
     }
 
     private void Wire()
@@ -34,32 +43,50 @@ public sealed partial class SourceDocumentView : UserControl
         _viewModel.PropertyChanged += OnViewModelChanged;
         _viewModel.GoToLineRequested = GoToLine;
 
+        var view = Editor.TextArea.TextView;
         if (_squiggles is not null)
-            Editor.TextArea.TextView.BackgroundRenderers.Remove(_squiggles);
+            view.BackgroundRenderers.Remove(_squiggles);
         _squiggles = new ErrorSquiggles(_viewModel.Text, Brush("ErrorBrush"));
-        Editor.TextArea.TextView.BackgroundRenderers.Add(_squiggles);
-        _squiggles.Show(_viewModel.Errors);
+        view.BackgroundRenderers.Add(_squiggles);
 
-        Recolour();
-    }
+        if (_errorBox is not null)
+            view.ElementGenerators.Remove(_errorBox);
+        _errorBox = new ErrorBox(_viewModel.Text, Font("UiFont"), Brush("ErrorSoftBrush"), Brush("ErrorBrush"), Brush("TextMutedBrush"));
+        view.ElementGenerators.Add(_errorBox);
 
-    private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(SourceDocumentViewModel.Errors) && _viewModel is not null && _squiggles is not null)
-        {
-            _squiggles.Show(_viewModel.Errors);
-            Editor.TextArea.TextView.InvalidateLayer(_squiggles.Layer);
-        }
-    }
-
-    /// <summary>The keyword colours follow the theme, so the highlighting is rebuilt when it changes.</summary>
-    private void Recolour()
-    {
         Editor.SyntaxHighlighting = SysmlHighlighting.Create(
             Colour("SyntaxKeyword"), Colour("SyntaxComment"), Colour("SyntaxString"),
             Colour("SyntaxNumber"), Colour("SyntaxMetadata"));
 
-        _squiggles?.Brush = Brush("ErrorBrush");
+        ShowErrors();
+    }
+
+    private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SourceDocumentViewModel.Errors))
+            ShowErrors();
+    }
+
+    private void ShowErrors()
+    {
+        if (_viewModel is null || _squiggles is null || _errorBox is null)
+            return;
+
+        _squiggles.Show(_viewModel.Errors);
+        _errorBox.Show(_viewModel.ErrorLine, _viewModel.ErrorMessage);
+        FitErrorBox();
+        Editor.TextArea.TextView.Redraw();
+    }
+
+    /// <summary>The box spans from the error line's indentation to the right edge of the text.</summary>
+    private void FitErrorBox()
+    {
+        if (_errorBox is null)
+            return;
+
+        var view = Editor.TextArea.TextView;
+        _errorBox.Fit(view.Bounds.Width, _errorBox.IndentColumns * view.WideSpaceWidth);
+        view.Redraw();
     }
 
     private void GoToLine(int line)
@@ -85,4 +112,7 @@ public sealed partial class SourceDocumentView : UserControl
 
     private IBrush Brush(string key)
         => this.TryFindResource(key, ActualThemeVariant, out var value) && value is IBrush b ? b : Brushes.Red;
+
+    private FontFamily Font(string key)
+        => this.TryFindResource(key, ActualThemeVariant, out var value) && value is FontFamily f ? f : FontFamily.Default;
 }

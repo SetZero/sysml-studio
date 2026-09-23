@@ -8,38 +8,29 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <ResourceInclude Source="avares://Dock.Avalonia.Themes.Fluent/Presets/Ide/Default.axaml" />
         <ResourceInclude Source="avares://SysmlStudio.App/Themes/Tokens.axaml" />
       </ResourceDictionary.MergedDictionaries>
-      <x:Double x:Key="DockCornerRadiusSmall">0</x:Double>
     </ResourceDictionary>
   </Application.Resources>
 
-  <!-- Each dockable finds its view here. -->
+  <!-- The document in front and the modal over the window find their views here. -->
   <Application.DataTemplates>
-    <DataTemplate DataType="vm:BrowserViewModel">
-      <views:ProjectBrowserView />
-    </DataTemplate>
-    <DataTemplate DataType="vm:PropertiesViewModel">
-      <views:PropertiesView />
-    </DataTemplate>
-    <DataTemplate DataType="vm:BottomPanelViewModel">
-      <views:BottomPanelView />
-    </DataTemplate>
     <DataTemplate DataType="vm:DiagramDocumentViewModel">
       <views:DiagramDocumentView />
     </DataTemplate>
     <DataTemplate DataType="vm:SourceDocumentViewModel">
       <views:SourceDocumentView />
     </DataTemplate>
-    <DataTemplate DataType="vm:WelcomeViewModel">
-      <views:WelcomeView />
+    <DataTemplate DataType="vm:DialogViewModel">
+      <views:EditDialogView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ExportDialogViewModel">
+      <views:ExportDialogView />
     </DataTemplate>
   </Application.DataTemplates>
 
   <Application.Styles>
     <FluentTheme />
-    <DockFluentTheme DensityStyle="Compact" />
     <StyleInclude Source="avares://Nodify.Avalonia/Themes/Controls.xaml" />
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
     <StyleInclude Source="avares://SysmlStudio.App/Themes/Styles.axaml" />

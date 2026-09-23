@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Dock.Model.Mvvm.Controls;
 using SysmlStudio.Model;
 
 namespace SysmlStudio.App.ViewModels;
@@ -22,17 +21,24 @@ public sealed partial class ElementViewModel(Element? element, string kind, stri
 
     public string? ShortName => Element?.ShortName is { Length: > 0 } s ? $"‹{s}›" : null;
 
-    /// <summary>"@deferred", shown after the name when the element carries it.</summary>
-    public string? Tag => Element?.Metadata.Any(m => m.StartsWith("@deferred", StringComparison.Ordinal)) == true
-        ? "@deferred"
-        : null;
+    /// <summary>"deferred", shown at the right of the row when the element carries @deferred.</summary>
+    public string? Tag => IsDeferred ? "deferred" : null;
 
-    /// <summary>The maturity keyword, or "none"; the row's left bar is coloured by it.</summary>
-    public string Maturity => Element?.Maturity ?? "none";
+    public bool IsDeferred => Element?.Metadata.Any(m => m.StartsWith("@deferred", StringComparison.Ordinal)) == true;
 
-    public bool HasMaturity => Element?.Maturity is not null || Tag is not null;
+    /// <summary>The workspace row at the top, drawn bold.</summary>
+    public bool IsRoot => Element is null;
 
-    public bool IsDefinitionLike => Element is { } e && (e.IsDefinition || e.Kind is "package" or "library package");
+    public bool IsPackage => Element?.Kind is "package" or "library package";
+
+    /// <summary>The glyph before the name: a square for a definition, a circle for a usage, dashed when deferred.</summary>
+    public bool ShowsSquare => Element is { IsDefinition: true } && !IsDeferred;
+
+    public bool ShowsCircle => Element is { IsDefinition: false } && !IsPackage && !IsDeferred;
+
+    public bool ShowsDashed => IsDeferred && !IsPackage;
+
+    public string ToolTip => Element is { } e ? $"{e.Kind} {e.QualifiedName}" : Label;
 
     public ObservableCollection<ElementViewModel> Children => _materialised ??= _children();
 
@@ -48,17 +54,9 @@ public sealed partial class ElementViewModel(Element? element, string kind, stri
 /// the box above it. A filter keeps every element whose name matches, with
 /// the path down to it expanded, so a match is never shown out of context.
 /// </summary>
-public sealed partial class BrowserViewModel : Tool
+public sealed partial class BrowserViewModel : ObservableObject
 {
     private SysmlWorkspace? _workspace;
-
-    public BrowserViewModel()
-    {
-        Id = "Browser";
-        Title = "PROJECT BROWSER";
-        CanClose = false;
-        CanPin = false;
-    }
 
     public ObservableCollection<ElementViewModel> Roots { get; } = [];
 
@@ -73,6 +71,14 @@ public sealed partial class BrowserViewModel : Tool
 
     public bool HasWorkspace => _workspace is not null;
 
+    /// <summary>"13 files", beside the panel's caption.</summary>
+    public string FilesText => _workspace?.Files.Count switch
+    {
+        null => string.Empty,
+        1 => "1 file",
+        var n => $"{n} files",
+    };
+
     private IReadOnlySet<string> _expanded = new HashSet<string>();
 
     /// <summary>Shows a workspace; rows whose qualified names are in <paramref name="expanded"/> open again.</summary>
@@ -81,6 +87,7 @@ public sealed partial class BrowserViewModel : Tool
         _workspace = workspace;
         _expanded = expanded ?? new HashSet<string>();
         OnPropertyChanged(nameof(HasWorkspace));
+        OnPropertyChanged(nameof(FilesText));
         Rebuild();
     }
 
@@ -134,9 +141,7 @@ public sealed partial class BrowserViewModel : Tool
             return;
 
         var filter = Filter.Trim();
-        var folder = Path.GetFileName(workspace.Directory.TrimEnd('\\', '/'));
-        var parent = Path.GetFileName(Path.GetDirectoryName(workspace.Directory.TrimEnd('\\', '/')) ?? string.Empty);
-        var label = $"{parent}/{folder} · {workspace.Files.Count} files";
+        var label = ShellViewModel.DisplayName(workspace.Directory);
 
         var expanded = _expanded;
         var root = new ElementViewModel(null, string.Empty, label, () => ChildrenOf(workspace.Root, filter, depth: 0, expanded))
@@ -155,7 +160,7 @@ public sealed partial class BrowserViewModel : Tool
                 continue;
 
             var captured = child;
-            var row = new ElementViewModel(child, KindLabel(child, depth), child.DisplayName,
+            var row = new ElementViewModel(child, child.Kind, child.DisplayName,
                 () => ChildrenOf(captured, filter, depth + 1, expanded))
             {
                 // What was open stays open; a filter opens the way to every match.
@@ -182,11 +187,4 @@ public sealed partial class BrowserViewModel : Tool
 
     private static bool HasMatchingDescendant(Element element, string filter)
         => element.Descendants().Any(d => IsBrowsable(d) && NameMatches(d, filter));
-
-    private static string KindLabel(Element element, int depth) => element.Kind switch
-    {
-        "package" when depth > 0 => "pkg",
-        "library package" => "library",
-        _ => element.Kind,
-    };
 }

@@ -64,6 +64,9 @@ public sealed class DiagramEdge(DiagramNode source, DiagramNode target, Relation
     public RelationKind Kind { get; } = kind;
     public string? Label { get; } = label;
 
+    /// <summary>The name of the relation itself, when it has one and the label says something else.</summary>
+    public string? Name { get; init; }
+
     /// <summary>The route MSAGL found around the boxes, in the same coordinates as the nodes.</summary>
     public List<(double X, double Y)> Waypoints { get; } = [];
 

@@ -21,9 +21,6 @@
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
     <PackageVersion Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
     <PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
-    <PackageVersion Include="Dock.Avalonia" Version="12.1.0.6" />
-    <PackageVersion Include="Dock.Model.Mvvm" Version="12.1.0.6" />
-    <PackageVersion Include="Dock.Avalonia.Themes.Fluent" Version="12.1.0.6" />
     <PackageVersion Include="FluentIcons.Avalonia" Version="2.1.341" />
     <PackageVersion Include="Nodify.Avalonia" Version="2.0.0" />
     <PackageVersion Include="bodong.Avalonia.PropertyGrid" Version="12.1.1.1" />

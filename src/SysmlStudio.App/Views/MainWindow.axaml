@@ -2,12 +2,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
         xmlns:views="clr-namespace:SysmlStudio.App.Views"
+        xmlns:model="clr-namespace:SysmlStudio.Model;assembly=SysmlStudio.Model"
         xmlns:ic="using:FluentIcons.Avalonia"
         x:Class="SysmlStudio.App.Views.MainWindow"
         x:DataType="vm:ShellViewModel"
         Title="SysML Studio"
-        Width="1600" Height="980"
-        MinWidth="900" MinHeight="600"
+        Width="1440" Height="900"
+        MinWidth="960" MinHeight="600"
         Background="{DynamicResource WorkbenchBrush}"
         FontFamily="{DynamicResource UiFont}">
 
@@ -15,6 +16,7 @@
     <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenFolderCommand}" />
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAllCommand}" />
+    <KeyBinding Gesture="Ctrl+E" Command="{Binding ExportCommand}" />
     <KeyBinding Gesture="Shift+F12" Command="{Binding FindUsagesCommand}" />
     <KeyBinding Gesture="Ctrl+D0" Command="{Binding FitCommand}" />
     <KeyBinding Gesture="F2" Command="{Binding RenameCommand}" />
@@ -25,111 +27,243 @@
     <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
   </Window.KeyBindings>
 
-  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+  <Grid RowDefinitions="44,*,26">
 
-    <!-- ===== Title strip ===== -->
-    <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
-            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="14,0">
-      <Grid ColumnDefinitions="Auto,Auto,*,Auto" Height="42">
-        <TextBlock Grid.Column="0" Text="SYSML STUDIO" VerticalAlignment="Center"
-                   FontSize="15" LetterSpacing="2.2" FontWeight="Medium"
-                   Foreground="{DynamicResource AccentTextBrush}" />
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" Margin="18,0,0,0" VerticalAlignment="Center">
-          <Border Width="1" Height="20" Background="{DynamicResource BorderBrush}" Margin="0,0,12,0" />
-          <Button Classes="flat" Command="{Binding SaveCommand}" ToolTip.Tip="Save (Ctrl+S)">
-            <ic:SymbolIcon Symbol="Save" FontSize="16" />
-          </Button>
-          <Button Classes="flat" Command="{Binding UndoCommand}" ToolTip.Tip="Undo">
-            <ic:SymbolIcon Symbol="ArrowUndo" FontSize="16" />
-          </Button>
-          <Button Classes="flat" Command="{Binding RedoCommand}" ToolTip.Tip="Redo">
-            <ic:SymbolIcon Symbol="ArrowRedo" FontSize="16" />
-          </Button>
-        </StackPanel>
-        <TextBlock Grid.Column="2" Text="{Binding WindowTitle}" Classes="mono muted"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" />
-        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Button Classes="flat" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="Light / dark">
-            <ic:SymbolIcon Symbol="WeatherMoon" FontSize="16" />
-          </Button>
-          <AutoCompleteBox Width="300" Height="30"
-                           ItemsSource="{Binding SearchItems}"
-                           Text="{Binding SearchText, Mode=TwoWay}"
-                           FilterMode="ContainsOrdinal"
-                           PlaceholderText="Search elements"
-                           FontSize="13"
-                           MaxDropDownHeight="420" />
-        </StackPanel>
-      </Grid>
-    </Border>
-
-    <!-- ===== Ribbon tabs ===== -->
-    <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" Padding="14,6,14,0">
-      <Grid ColumnDefinitions="Auto,*,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="2">
-          <Button Classes="primary" Padding="18,7" FontWeight="Normal" FontSize="14" Content="File">
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Open folder…" Command="{Binding OpenFolderCommand}" InputGesture="Ctrl+O" />
-                <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
-                <MenuItem Header="Save all" Command="{Binding SaveAllCommand}" InputGesture="Ctrl+Shift+S" />
-                <Separator />
-                <MenuItem Header="Export as SVG…" Command="{Binding ExportSvgCommand}" />
-                <MenuItem Header="Export as PNG…" Command="{Binding ExportPngCommand}" />
-                <Separator />
-                <MenuItem Header="Exit" Click="OnExit" />
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-          <RadioButton Classes="tab ribbon-tab" GroupName="ribbon" Content="Home" IsChecked="True" x:Name="HomeTab" />
-          <RadioButton Classes="tab ribbon-tab" GroupName="ribbon" Content="Diagram" x:Name="DiagramTab" />
-          <RadioButton Classes="tab ribbon-tab" GroupName="ribbon" Content="View" x:Name="ViewTab" />
-        </StackPanel>
-        <Button Grid.Column="2" Classes="flat" Command="{Binding ToggleRibbonCommand}" VerticalAlignment="Center">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <ic:SymbolIcon Symbol="ChevronUp" FontSize="12" VerticalAlignment="Center" />
-            <TextBlock Text="collapse" Classes="mono muted" FontSize="12" />
-          </StackPanel>
-        </Button>
-      </Grid>
-    </Border>
-
-    <!-- ===== Ribbon body ===== -->
-    <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
-            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,1"
-            IsVisible="{Binding !IsRibbonCollapsed}">
+    <!-- ===== Title bar ===== -->
+    <Border Grid.Row="0" Background="{DynamicResource HeaderBrush}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
       <Panel>
-        <views:RibbonHome IsVisible="{Binding #HomeTab.IsChecked}" />
-        <views:RibbonDiagram IsVisible="{Binding #DiagramTab.IsChecked}" />
-        <views:RibbonView IsVisible="{Binding #ViewTab.IsChecked}" />
+        <!-- Logo, name, breadcrumb -->
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="9">
+          <Border Width="17" Height="17" BorderBrush="{DynamicResource TextMutedBrush}" BorderThickness="1.4"
+                  VerticalAlignment="Center">
+            <Border Width="7" Height="7" Background="{DynamicResource AccentBrush}" />
+          </Border>
+          <TextBlock Text="SysML Studio" FontSize="15" VerticalAlignment="Center" />
+          <Border Width="1" Height="20" Background="{DynamicResource BorderStrongBrush}" Margin="6,0,6,0" />
+          <TextBlock VerticalAlignment="Center" FontSize="14">
+            <Run Text="{Binding WorkspaceName}" Foreground="{DynamicResource TextMutedBrush}" />
+          </TextBlock>
+          <TextBlock Text="/" Classes="faint" FontSize="14" VerticalAlignment="Center" IsVisible="{Binding HasDocumentCaption}" />
+          <TextBlock Text="{Binding DocumentCaption}" FontSize="14" VerticalAlignment="Center"
+                     MaxWidth="320" TextTrimming="CharacterEllipsis" IsVisible="{Binding HasDocumentCaption}" />
+        </StackPanel>
+
+        <!-- Diagram kind -->
+        <Border Classes="segmented" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowsKinds}">
+          <ItemsControl ItemsSource="{Binding DiagramKinds}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DiagramKindOption">
+                <Button Classes="segment" Classes.active="{Binding IsActive}" Content="{Binding Label}"
+                        IsEnabled="{Binding IsAvailable}" Padding="12,4"
+                        Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).SwitchKindCommand}"
+                        CommandParameter="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
+
+        <!-- History, search, export, theme -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Margin="0,0,12,0" Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding HasWorkspace}">
+            <Button Classes="flat" Command="{Binding UndoCommand}" ToolTip.Tip="Undo (Ctrl+Z)">
+              <ic:SymbolIcon Symbol="ArrowUndo" FontSize="17" />
+            </Button>
+            <Button Classes="flat" Command="{Binding RedoCommand}" ToolTip.Tip="Redo (Ctrl+Y)">
+              <ic:SymbolIcon Symbol="ArrowRedo" FontSize="17" />
+            </Button>
+          </StackPanel>
+          <Panel Width="168" Height="30" Margin="6,0,0,0" IsVisible="{Binding HasWorkspace}">
+            <AutoCompleteBox x:Name="SearchBox"
+                             ItemsSource="{Binding SearchItems}"
+                             Text="{Binding SearchText, Mode=TwoWay}"
+                             FilterMode="ContainsOrdinal"
+                             PlaceholderText="Search"
+                             MaxDropDownHeight="420"
+                             MinimumPrefixLength="2"
+                             FontSize="14" Padding="28,0,40,0"
+                             Background="{DynamicResource SurfaceRaisedBrush}"
+                             BorderBrush="{DynamicResource BorderBrush}">
+              <AutoCompleteBox.Styles>
+                <Style Selector="TextBox">
+                  <Setter Property="VerticalContentAlignment" Value="Center" />
+                  <Setter Property="MinHeight" Value="30" />
+                </Style>
+              </AutoCompleteBox.Styles>
+            </AutoCompleteBox>
+            <ic:SymbolIcon Symbol="Search" FontSize="15" Foreground="{DynamicResource TextFaintBrush}"
+                           HorizontalAlignment="Left" VerticalAlignment="Center" Margin="9,0,0,0" IsHitTestVisible="False" />
+            <TextBlock Text="Ctrl K" Classes="faint" FontSize="11.5" HorizontalAlignment="Right"
+                       VerticalAlignment="Center" Margin="0,0,9,0" IsHitTestVisible="False" />
+          </Panel>
+          <Button Classes="outline" Content="Export" Padding="12,4" Margin="4,0,2,0"
+                  Command="{Binding ExportCommand}" IsVisible="{Binding HasWorkspace}" ToolTip.Tip="Export the model (Ctrl+E)" />
+          <Button Classes="flat" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="Light or dark">
+            <ic:SymbolIcon Symbol="WeatherMoon" FontSize="17" />
+          </Button>
+        </StackPanel>
       </Panel>
     </Border>
 
-    <!-- ===== Panes ===== -->
-    <DockControl Grid.Row="3" Layout="{Binding Layout}" Margin="0" />
+    <!-- ===== Body ===== -->
+    <Grid Grid.Row="1" ColumnDefinitions="48,Auto,*,Auto">
+
+      <!-- Activity bar -->
+      <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+        <StackPanel Margin="0,10,0,0" Spacing="4" HorizontalAlignment="Center">
+          <Button Classes="flat" Classes.active="{Binding ShowsModel}" Width="34" Height="34"
+                  Command="{Binding ShowSideCommand}" CommandParameter="{x:Static vm:SidePanel.Model}" ToolTip.Tip="Model">
+            <ic:SymbolIcon Symbol="DocumentMultiple" FontSize="19" />
+          </Button>
+          <Button Classes="flat" Classes.active="{Binding ShowsSearch}" Width="34" Height="34"
+                  Command="{Binding ShowSideCommand}" CommandParameter="{x:Static vm:SidePanel.Search}" ToolTip.Tip="Search the model">
+            <ic:SymbolIcon Symbol="Search" FontSize="18" />
+          </Button>
+          <Button Classes="flat" Classes.active="{Binding Bottom.IsOpen}" Width="34" Height="34"
+                  Command="{Binding ToggleProblemsCommand}" ToolTip.Tip="Problems">
+            <Panel>
+              <ic:SymbolIcon Symbol="ErrorCircle" FontSize="18" />
+              <Ellipse Width="6" Height="6" Fill="{DynamicResource ErrorBrush}" HorizontalAlignment="Right"
+                       VerticalAlignment="Top" Margin="0,-1,-2,0" IsVisible="{Binding HasErrors}" />
+            </Panel>
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- Model / search panel -->
+      <Border Grid.Column="1" Width="232" Background="{DynamicResource SurfaceBrush}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0"
+              IsVisible="{Binding HasWorkspace}">
+        <Panel>
+          <views:ProjectBrowserView DataContext="{Binding Browser}" IsVisible="{Binding $parent[Window].((vm:ShellViewModel)DataContext).ShowsModel}" />
+
+          <DockPanel IsVisible="{Binding ShowsSearch}">
+            <StackPanel DockPanel.Dock="Top" Margin="14,14,14,8" Spacing="10">
+              <TextBlock Text="SEARCH" Classes="caption" />
+              <TextBox Classes="field" Text="{Binding SearchText}" PlaceholderText="Name or qualified name" FontSize="13.5" MinHeight="32" />
+            </StackPanel>
+            <ScrollViewer>
+              <ItemsControl ItemsSource="{Binding SearchResults}" Margin="6,0">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="model:Element">
+                    <Button Classes="flat row" Padding="8,5"
+                            Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).RevealCommand}"
+                            CommandParameter="{Binding}">
+                      <StackPanel Spacing="1">
+                        <TextBlock Text="{Binding DisplayName}" FontSize="14" Foreground="{DynamicResource TextBrush}" />
+                        <TextBlock Text="{Binding QualifiedName}" Classes="mono faint" FontSize="11" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </Panel>
+      </Border>
+
+      <!-- Documents and the panel under them -->
+      <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto" Background="{DynamicResource CanvasBrush}">
+
+        <!-- Tab strip -->
+        <Border Grid.Row="0" Height="37" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                IsVisible="{Binding HasDocuments}">
+          <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Documents}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:DocumentViewModel">
+                  <Panel Classes="tab">
+                    <Button Classes="doc-tab" Classes.active="{Binding IsActive}" Height="36" ToolTip.Tip="{Binding ToolTip}"
+                            Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).ActivateCommand}"
+                            CommandParameter="{Binding}">
+                      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,14,0">
+                        <TextBlock Text="{Binding Title}" FontSize="14" VerticalAlignment="Center"
+                                   Classes.mono="{Binding IsSource}" />
+                        <Ellipse Width="6" Height="6" Fill="{DynamicResource ErrorBrush}" VerticalAlignment="Center"
+                                 IsVisible="{Binding HasDot}" />
+                      </StackPanel>
+                    </Button>
+                    <Button Classes="flat tab-close" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Margin="0,0,5,0" Padding="3" ToolTip.Tip="Close"
+                            Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).CloseDocumentCommand}"
+                            CommandParameter="{Binding}">
+                      <ic:SymbolIcon Symbol="Dismiss" FontSize="11" />
+                    </Button>
+                  </Panel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Border>
+
+        <!-- The document in front -->
+        <ContentControl Grid.Row="1" Content="{Binding ActiveDocument}" />
+
+        <!-- A model with nothing drawn yet -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6"
+                    IsVisible="{Binding ShowsHint}">
+          <TextBlock Text="Nothing drawn yet" FontSize="18" HorizontalAlignment="Center" />
+          <TextBlock Text="Pick an element in the model, then a diagram kind above." Classes="muted" FontSize="14" />
+        </StackPanel>
+
+        <!-- The empty state -->
+        <views:WelcomeView Grid.Row="0" Grid.RowSpan="3" DataContext="{Binding Welcome}"
+                           IsVisible="{Binding !$parent[Window].((vm:ShellViewModel)DataContext).HasWorkspace}" />
+
+        <!-- Problems and usages -->
+        <views:BottomPanelView Grid.Row="2" DataContext="{Binding Bottom}" Height="232"
+                               IsVisible="{Binding IsOpen}" />
+      </Grid>
+
+      <!-- Inspector -->
+      <Border Grid.Column="3" Width="272" Background="{DynamicResource SurfaceBrush}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
+              IsVisible="{Binding HasWorkspace}">
+        <views:PropertiesView DataContext="{Binding Properties}" />
+      </Border>
+    </Grid>
 
     <!-- ===== Status bar ===== -->
-    <Border Grid.Row="4" Background="{DynamicResource SurfaceBrush}"
-            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,5">
-      <Grid ColumnDefinitions="Auto,*,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="22">
-          <TextBlock Text="{Binding IndexedSummary}" Classes="mono muted" FontSize="12" />
-          <TextBlock Text="{Binding ErrorText}" Classes="mono error" FontSize="12" IsVisible="{Binding HasWorkspace}" />
-          <TextBlock Text="{Binding WarningText}" Classes="mono warning" FontSize="12" IsVisible="{Binding HasWorkspace}" />
-          <TextBlock Text="{Binding Caret}" Classes="mono muted" FontSize="12" />
-          <TextBlock Text="{Binding ToolHint}" Classes="mono link" FontSize="12" IsVisible="{Binding HasTool}" />
-        </StackPanel>
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="22">
-          <TextBlock Text="{Binding SaveState}" Classes="mono muted" FontSize="12" />
-          <TextBlock Text="{x:Static vm:ShellViewModel.Runtime}" Classes="mono muted" FontSize="12" />
-          <TextBlock Text="{Binding Branch}" Classes="mono muted" FontSize="12" />
+    <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <Panel VerticalAlignment="Center">
+          <TextBlock Text="{Binding SaveState}" Classes="muted" FontSize="12" IsVisible="{Binding !HasTool}" />
+          <TextBlock Text="{Binding ToolHint}" Classes="muted" FontSize="12" IsVisible="{Binding HasTool}" />
+        </Panel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="18" VerticalAlignment="Center">
+          <TextBlock Text="{Binding Caret}" Classes="faint" FontSize="12" VerticalAlignment="Center"
+                     IsVisible="{Binding ActiveSource, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <Button Classes="link" Command="{Binding ToggleProblemsCommand}" IsVisible="{Binding HasWorkspace}"
+                  ToolTip.Tip="Show the problems">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Panel VerticalAlignment="Center" IsVisible="{Binding HasProblems}">
+                <Ellipse Width="6" Height="6" Fill="{DynamicResource WarningBrush}" />
+                <Ellipse Width="6" Height="6" Fill="{DynamicResource ErrorBrush}" IsVisible="{Binding HasErrors}" />
+              </Panel>
+              <TextBlock Text="{Binding ProblemSummary}" Classes="muted" FontSize="12" />
+            </StackPanel>
+          </Button>
         </StackPanel>
       </Grid>
     </Border>
 
-    <!-- The edit dialog, over everything -->
-    <Panel Grid.Row="0" Grid.RowSpan="5" Background="{DynamicResource OverlayBrush}" IsVisible="{Binding HasDialog}">
-      <views:EditDialogView DataContext="{Binding Dialog}" />
+    <!-- The modal, over everything -->
+    <Panel Grid.Row="0" Grid.RowSpan="3" Background="{DynamicResource OverlayBrush}" IsVisible="{Binding HasDialog}">
+      <ContentControl Content="{Binding Dialog}" HorizontalAlignment="Center" VerticalAlignment="Center" />
     </Panel>
 
   </Grid>

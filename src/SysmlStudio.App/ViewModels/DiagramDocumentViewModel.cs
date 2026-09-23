@@ -4,7 +4,6 @@ using Avalonia;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Dock.Model.Mvvm.Controls;
 using SysmlStudio.Diagrams;
 using SysmlStudio.Model;
 
@@ -25,12 +24,26 @@ public sealed partial class DiagramNodeViewModel(DiagramNode node) : ObservableO
     public string Title => _node.Label;
     public bool IsPseudoNode => _node.IsPseudo;
 
-    /// <summary>The element's kind in capitals, as the node's header shows it: "PART DEF".</summary>
-    public string KindCaption => _node.Element.Kind.ToUpperInvariant();
+    /// <summary>The line over the title: "requirement · S.1", "part · 1..8".</summary>
+    public string KindCaption
+    {
+        get
+        {
+            var e = _node.Element;
+            var extra = e.ShortName is { Length: > 0 } s ? s : e.Multiplicity?.Trim('[', ']');
+            return extra is { Length: > 0 } ? $"{e.Kind} · {extra}" : e.Kind;
+        }
+    }
 
-    public string? ShortName => _node.Element.ShortName is { Length: > 0 } s ? $"‹{s}›" : null;
+    /// <summary>A requirement's text, under its title; other boxes list their features instead.</summary>
+    public string? Documentation => _node.Element.Kind.Contains("requirement", StringComparison.Ordinal)
+        ? _node.Element.Documentation
+        : null;
+
+    public bool HasDocumentation => !string.IsNullOrWhiteSpace(Documentation);
     public ObservableCollection<string> Features { get; } = new(node.Features);
-    public bool HasFeatures => Features.Count > 0;
+    /// <summary>A requirement's only feature is its text, which the box already shows as its description.</summary>
+    public bool HasFeatures => Features.Count > 0 && !HasDocumentation;
     public double Width => _node.Width;
     public double Height => _node.Height;
 
@@ -101,7 +114,10 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
 
     public RelationKind Kind => _edge.Kind;
 
-    public string Description => _edge.Label is { Length: > 0 } label ? $"{_edge.Kind}: {label}" : _edge.Kind.ToString();
+    /// <summary>The tooltip: the relation's name, or what it joins, "tick → irq.timer".</summary>
+    public string Description => _edge.Name ?? (_edge.Kind is RelationKind.Connect or RelationKind.Flow or RelationKind.Interface
+        ? $"{Source.Element.Name} → {Target.Element.Name}"
+        : $"{Source.Title} {_edge.Label ?? _edge.Kind.ToString().ToLowerInvariant()} {Target.Title}");
 
     /// <summary>Trace relations are drawn dashed, the way UML draws a dependency.</summary>
     public bool IsDashed => Kind is RelationKind.Satisfy or RelationKind.Verify
@@ -118,6 +134,9 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
 
     /// <summary>A filled arrowhead: everything else.</summary>
     public bool IsFilledHead => !IsGeneralization && !IsOpenHead;
+
+    /// <summary>A connection joins two ends as equals: no arrowhead, a small circle at each end instead.</summary>
+    public bool IsConnector => Kind is RelationKind.Connect or RelationKind.Interface;
 
     /// <summary>The points the line passes through, in canvas coordinates.</summary>
     private IReadOnlyList<Point> Points
@@ -149,10 +168,13 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>The arrowhead at the target: a triangle, hollow or filled, or an open V.</summary>
-    public Geometry Head
+    public Geometry? Head
     {
         get
         {
+            if (IsConnector)
+                return null;
+
             var points = Points;
             var tip = points[^1];
             var direction = Direction(points[points.Count - 2], tip);
@@ -196,6 +218,23 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>The circles where a connection or flow meets its parts; empty for every other relation.</summary>
+    public Geometry? Ports
+    {
+        get
+        {
+            if (!IsConnector && Kind != RelationKind.Flow)
+                return null;
+
+            var points = Points;
+            var group = new GeometryGroup();
+            group.Children.Add(new EllipseGeometry(new Rect(points[0].X - 3.5, points[0].Y - 3.5, 7, 7)));
+            if (IsConnector)
+                group.Children.Add(new EllipseGeometry(new Rect(points[^1].X - 3.5, points[^1].Y - 3.5, 7, 7)));
+            return group;
+        }
+    }
+
     /// <summary>The label's top left: where MSAGL placed it, or beside the middle of the line.</summary>
     public Point LabelLocation
     {
@@ -223,6 +262,7 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(Line));
         OnPropertyChanged(nameof(Head));
         OnPropertyChanged(nameof(Tail));
+        OnPropertyChanged(nameof(Ports));
         OnPropertyChanged(nameof(LabelLocation));
     }
 
@@ -264,7 +304,7 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
 }
 
 /// <summary>A diagram open as a document tab.</summary>
-public sealed partial class DiagramDocumentViewModel : Document
+public sealed partial class DiagramDocumentViewModel : DocumentViewModel
 {
     public DiagramDocumentViewModel(Diagram diagram, bool laidOut = false)
     {
@@ -282,8 +322,8 @@ public sealed partial class DiagramDocumentViewModel : Document
         }
 
         Id = $"diagram:{diagram.Kind}:{diagram.Root.QualifiedName}";
-        Title = $"{diagram.Root.DisplayName} · {KindName(diagram.Kind)}";
-        CanFloat = true;
+        Title = diagram.Root.DisplayName;
+        ToolTip = $"{diagram.Root.QualifiedName} · {KindName(diagram.Kind)}";
 
         var nodes = diagram.Nodes.ConvertAll(n => new DiagramNodeViewModel(n));
         Nodes = new ObservableCollection<DiagramNodeViewModel>(nodes);
@@ -374,38 +414,34 @@ public sealed partial class DiagramDocumentViewModel : Document
         return true;
     }
 
-    /// <summary>The line above the canvas: what the diagram is of and how much is in it.</summary>
-    public string Breadcrumb
+    /// <summary>What the floating toolbar adds to, or draws on, this kind of diagram.</summary>
+    public IReadOnlyList<ToolboxItem> Toolbox => _toolbox ??= Diagram.Kind switch
     {
-        get
-        {
-            var (nodes, edges) = Diagram.Kind switch
-            {
-                DiagramKind.Interconnection => ("parts", "connections"),
-                DiagramKind.Requirements => ("elements", "trace links"),
-                DiagramKind.ActionFlow => ("actions", "successions"),
-                DiagramKind.StateMachine => ("states", "transitions"),
-                _ => ("definitions", "relations"),
-            };
-            return $"{KindName(Diagram.Kind).ToLowerInvariant()}  ›  {Diagram.Root.QualifiedName}  ·  "
-                + $"{Nodes.Count} {nodes}, {Connections.Count} {edges}";
-        }
-    }
-
-    /// <summary>What the toolbox adds to, or draws on, this kind of diagram.</summary>
-    public IReadOnlyList<ToolboxItem> Toolbox => Diagram.Kind switch
-    {
-        DiagramKind.Interconnection => [new("Part", "part"), new("Port", "port"), new("Item", "item"), new("Connect", Relation: "Connect"), new("Flow", Relation: "Flow")],
-        DiagramKind.Requirements => [new("Requirement", "requirement"), new("Requirement def", "requirement def"), new("Satisfy", Relation: "Satisfy"), new("Dependency", Relation: "Dependency"), new("Allocate", Relation: "Allocate")],
-        DiagramKind.ActionFlow => [new("Action", "action"), new("Succession", Relation: "Succession")],
-        DiagramKind.StateMachine => [new("State", "state"), new("Transition", Relation: "Transition")],
-        _ => [new("Part def", "part def"), new("Part", "part"), new("Port def", "port def"), new("Attribute", "attribute"), new("Specialization", Relation: "Specialization"), new("Composition", Relation: "Composition"), new("Dependency", Relation: "Dependency")],
+        DiagramKind.Interconnection => [new("Part", "part"), new("Port", "port"), new("Connect", relation: "Connect"), new("Flow", relation: "Flow")],
+        DiagramKind.Requirements => [new("Requirement", "requirement"), new("Satisfy", relation: "Satisfy"), new("Depends", relation: "Dependency"), new("Allocate", relation: "Allocate")],
+        DiagramKind.ActionFlow => [new("Action", "action"), new("Succession", relation: "Succession")],
+        DiagramKind.StateMachine => [new("State", "state"), new("Transition", relation: "Transition")],
+        _ => [new("Part def", "part def"), new("Part", "part"), new("Port def", "port def"), new("Specializes", relation: "Specialization"), new("Owns", relation: "Composition")],
     };
+
+    private IReadOnlyList<ToolboxItem>? _toolbox;
+
+    /// <summary>True while no relation is being drawn: the pointer is the active tool.</summary>
+    [ObservableProperty]
+    public partial bool IsPointer { get; set; } = true;
+
+    /// <summary>Marks the toolbar button of the relation being drawn, or the pointer when none is.</summary>
+    public void ShowActiveTool(string? relation)
+    {
+        foreach (var item in Toolbox)
+            item.IsActive = relation is not null && item.Relation == relation;
+        IsPointer = relation is null;
+    }
 
     [ObservableProperty]
     public partial double Zoom { get; set; } = 1;
 
-    public string ZoomText => $"{Math.Round(Zoom * 100)} %";
+    public string ZoomText => $"{Math.Round(Zoom * 100)}%";
 
     /// <summary>Set by the view: frames every node.</summary>
     public Action? FitRequested { get; set; }
@@ -460,8 +496,19 @@ public sealed partial class DiagramDocumentViewModel : Document
     };
 }
 
-/// <summary>A toolbox entry: an element kind to add, or a relation to draw between two boxes.</summary>
-public sealed record ToolboxItem(string Label, string? Kind = null, string? Relation = null)
+/// <summary>A toolbar entry: an element kind to add, or a relation to draw between two boxes.</summary>
+public sealed partial class ToolboxItem(string label, string? kind = null, string? relation = null) : ObservableObject
 {
+    public string Label { get; } = label;
+    public string? Kind { get; } = kind;
+    public string? Relation { get; } = relation;
     public bool IsRelation => Relation is not null;
+
+    /// <summary>The relation this entry draws is waiting for its clicks.</summary>
+    [ObservableProperty]
+    public partial bool IsActive { get; set; }
+
+    public string Tip => IsRelation
+        ? $"Draw {Label.ToLowerInvariant()}: click one box, then the other"
+        : $"Add a {Kind} to what this diagram shows";
 }

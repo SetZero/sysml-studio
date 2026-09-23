@@ -1,22 +1,17 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
-using Dock.Model.Mvvm.Controls;
 using SysmlStudio.App.Services;
 
 namespace SysmlStudio.App.ViewModels;
 
 /// <summary>The document shown when no model is open: open a folder, or one opened before.</summary>
-public sealed partial class WelcomeViewModel : Document
+public sealed partial class WelcomeViewModel : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
 {
     private readonly ShellViewModel _shell;
 
     public WelcomeViewModel(ShellViewModel shell)
     {
         _shell = shell;
-        Id = "welcome";
-        Title = "Start";
-        CanClose = false;
-        CanFloat = false;
         Refresh();
     }
 
@@ -29,7 +24,7 @@ public sealed partial class WelcomeViewModel : Document
 
     public bool IsModelOpen => OpenFolderName is not null;
 
-    public new bool IsEmpty => OpenFolderName is null;
+    public bool IsEmpty => OpenFolderName is null;
 
     public bool HasRecent => Recent.Count > 0;
 

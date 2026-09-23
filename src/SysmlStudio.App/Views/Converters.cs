@@ -1,16 +1,12 @@
-using System.Globalization;
 using Avalonia.Data.Converters;
+using Avalonia.Media;
 
 namespace SysmlStudio.App.Views;
 
-/// <summary>True when the bound value equals the converter parameter: "is this the active diagram kind?"</summary>
-public sealed class EqualsConverter : IValueConverter
+/// <summary>The few conversions the views need that bindings cannot express.</summary>
+public static class Converters
 {
-    public static EqualsConverter Instance { get; } = new();
-
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => Equals(value, parameter);
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => throw new NotSupportedException();
+    /// <summary>True → semibold, false → normal: the workspace row at the top of the tree.</summary>
+    public static IValueConverter BoldWhen { get; } =
+        new FuncValueConverter<bool, FontWeight>(bold => bold ? FontWeight.SemiBold : FontWeight.Normal);
 }

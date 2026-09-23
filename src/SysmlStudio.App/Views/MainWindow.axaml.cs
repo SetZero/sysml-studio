@@ -1,5 +1,5 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
+using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using SysmlStudio.App.Services;
 
@@ -8,7 +8,15 @@ namespace SysmlStudio.App.Views;
 /// <summary>The one window. It owns the pickers; everything else is the view model's.</summary>
 public sealed partial class MainWindow : Window, IShellDialogs
 {
-    public MainWindow() => InitializeComponent();
+    public MainWindow()
+    {
+        InitializeComponent();
+        KeyBindings.Add(new KeyBinding
+        {
+            Gesture = new KeyGesture(Key.K, KeyModifiers.Control),
+            Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => SearchBox.Focus()),
+        });
+    }
 
     public async Task<string?> PickFolderAsync()
     {
@@ -32,6 +40,4 @@ public sealed partial class MainWindow : Window, IShellDialogs
 
         return file?.TryGetLocalPath();
     }
-
-    private void OnExit(object? sender, RoutedEventArgs e) => Close();
 }

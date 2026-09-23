@@ -1,7 +1,6 @@
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Dock.Model.Mvvm.Controls;
 using SysmlStudio.Syntax;
 
 namespace SysmlStudio.App.ViewModels;
@@ -11,7 +10,7 @@ namespace SysmlStudio.App.ViewModels;
 /// after the last keystroke, so errors appear while writing; saving writes the
 /// text as it stands and re-indexes the model.
 /// </summary>
-public sealed partial class SourceDocumentViewModel : Document
+public sealed partial class SourceDocumentViewModel : DocumentViewModel
 {
     private readonly ShellViewModel _shell;
     private readonly DispatcherTimer _reparse;
@@ -23,7 +22,7 @@ public sealed partial class SourceDocumentViewModel : Document
         RelativePath = relativePath;
         Id = "source:" + path;
         Title = System.IO.Path.GetFileName(path);
-        CanFloat = true;
+        ToolTip = relativePath;
 
         Text = new TextDocument(text);
         Text.TextChanged += (_, _) => OnTextChanged();
@@ -40,13 +39,15 @@ public sealed partial class SourceDocumentViewModel : Document
 
     public string Path { get; }
 
-    /// <summary>The path shown above the editor: relative to the model folder's parent.</summary>
+    public override bool IsSource => true;
+
+    /// <summary>The path relative to the model folder.</summary>
     public string RelativePath { get; }
 
     public TextDocument Text { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HeaderLine), nameof(HasErrors), nameof(FirstError))]
+    [NotifyPropertyChangedFor(nameof(HasErrors), nameof(FirstError), nameof(ErrorLine), nameof(ErrorMessage))]
     public partial IReadOnlyList<SyntaxError> Errors { get; set; } = [];
 
     [ObservableProperty]
@@ -59,19 +60,32 @@ public sealed partial class SourceDocumentViewModel : Document
 
     public SyntaxError? FirstError => Errors.Count > 0 ? Errors[0] : null;
 
-    public string HeaderLine
+    /// <summary>The line the box under the first error hangs from; 0 when the file parses.</summary>
+    public int ErrorLine => FirstError?.Line ?? 0;
+
+    /// <summary>The first error in the parser's words, shortened to what it expected where it can be.</summary>
+    public string ErrorMessage => FirstError is { } error ? Shorten(error.Message) : string.Empty;
+
+    /// <summary>
+    /// ANTLR lists every token it would have taken ("mismatched input 'x'
+    /// expecting {';', '{', …}"). A short list reads as "Expected ';'"; a long
+    /// one says nothing useful, so the message names what was found instead.
+    /// </summary>
+    public static string Shorten(string message)
     {
-        get
-        {
-            var errors = Errors.Count switch
-            {
-                0 => "no errors",
-                1 => "1 error",
-                var n => $"{n} errors",
-            };
-            var endings = Text.Text.Contains("\r\n", StringComparison.Ordinal) ? "CRLF" : "LF";
-            return $"{RelativePath}  ·  UTF-8  ·  {endings}  ·  {errors}";
-        }
+        var expecting = message.IndexOf(" expecting ", StringComparison.Ordinal);
+        if (expecting < 0)
+            return message;
+
+        var what = message[(expecting + " expecting ".Length)..].Trim();
+        var choices = what.StartsWith('{') ? what.Trim('{', '}').Split(", ") : [what];
+        if (choices.Length <= 3)
+            return "Expected " + string.Join(" or ", choices);
+
+        var found = message[..expecting];
+        var quote = found.IndexOf('\'');
+        var token = quote < 0 ? found : found[quote..];
+        return token == "'<EOF>'" ? "Unexpected end of file" : "Unexpected " + token;
     }
 
     public void GoToLine(int line) => GoToLineRequested?.Invoke(line);
@@ -124,7 +138,9 @@ public sealed partial class SourceDocumentViewModel : Document
 
     partial void OnIsDirtyChanged(bool value)
     {
-        Title = System.IO.Path.GetFileName(Path);
+        HasDot = value || HasErrors;
         _shell.RefreshStatus();
     }
+
+    partial void OnErrorsChanged(IReadOnlyList<SyntaxError> value) => HasDot = IsDirty || value.Count > 0;
 }

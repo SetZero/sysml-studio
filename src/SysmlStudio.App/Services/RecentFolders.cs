@@ -3,7 +3,22 @@ using System.Text.Json;
 namespace SysmlStudio.App.Services;
 
 /// <summary>A model folder opened before, with how many files it held then.</summary>
-public sealed record RecentFolder(string Path, int FileCount);
+public sealed record RecentFolder(string Path, int FileCount)
+{
+    /// <summary>What the start page calls it: "ferrix" for ferrix/docs/sysml.</summary>
+    public string Name => ViewModels.ShellViewModel.DisplayName(Path);
+
+    /// <summary>The path with the home folder written as "~", and forward slashes.</summary>
+    public string ShortPath
+    {
+        get
+        {
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var path = home.Length > 0 && Path.StartsWith(home, StringComparison.OrdinalIgnoreCase) ? "~" + Path[home.Length..] : Path;
+            return path.Replace('\\', '/');
+        }
+    }
+}
 
 /// <summary>
 /// The folders opened lately, newest first, kept in the user's application

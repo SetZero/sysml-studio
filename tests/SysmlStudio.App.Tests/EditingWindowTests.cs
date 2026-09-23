@@ -59,7 +59,10 @@ public sealed class EditingWindowTests : IDisposable
         var dialog = Assert.IsType<DialogViewModel>(shell.Dialog);
         dialog.Name = "Motor";
         Settle();
-        Shoot(window, "dialog-rename");
+        Shoot(window, "rename");
+        Assert.Equal("Rename Engine", dialog.Title);
+        Assert.Equal("Updates 2 references in 1 file. Formatting and comments stay as they are.", dialog.Summary);
+        Assert.Equal([new FileChange("sample.sysml", 2)], dialog.Files);
         Assert.Contains(dialog.Preview, l => l.Contains("+ part def <'P.1'> Motor {", StringComparison.Ordinal));
         dialog.ConfirmCommand.Execute(null);
         Settle();
@@ -69,7 +72,7 @@ public sealed class EditingWindowTests : IDisposable
         Assert.Equal("Sample", shell.SelectedElement?.QualifiedName); // the selection stays where it was
         var diagram = Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
         Assert.Contains(diagram.Nodes, n => n.Title == "Motor");
-        Assert.Equal("modified", shell.SaveState);
+        Assert.StartsWith("Unsaved changes", shell.SaveState, StringComparison.Ordinal);
 
         // Nothing was written: that is Save's job.
         Assert.Contains("Engine", File.ReadAllText(SamplePath), StringComparison.Ordinal);
@@ -100,19 +103,25 @@ public sealed class EditingWindowTests : IDisposable
         shell.SaveAllCommand.Execute(null);
         Settle();
         Assert.Contains("part brakes : RollingThing;", File.ReadAllText(SamplePath), StringComparison.Ordinal);
-        Assert.Equal("saved", shell.SaveState);
+        Assert.Equal("Saved", shell.SaveState);
     }
 
     [AvaloniaFact]
     public void TheRelationToolDrawsAConnectBetweenTwoClickedBoxes()
     {
-        var (_, shell) = Open();
+        var (window, shell) = Open();
         shell.Select(shell.Workspace!.Find("Sample::Vehicle")!);
         shell.OpenDiagramCommand.Execute(DiagramKind.Interconnection);
         Settle();
 
         shell.StartRelationCommand.Execute("Connect");
+        Settle();
+        Shoot(window, "connecting");
         Assert.True(shell.HasTool);
+        Assert.Equal("Click the part or port to connect · Esc to cancel", shell.ToolHint);
+        var before = Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
+        Assert.False(before.IsPointer);
+        Assert.True(before.Toolbox.Single(t => t.Relation == "Connect").IsActive);
 
         var diagram = Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
         diagram.Nodes.Single(n => n.Element.Name == "wheels").IsSelected = true;
@@ -133,7 +142,7 @@ public sealed class EditingWindowTests : IDisposable
         Settle();
 
         var dialog = Assert.IsType<DialogViewModel>(shell.Dialog);
-        Assert.Contains("1 reference will no longer resolve", dialog.Title, StringComparison.Ordinal);
+        Assert.Contains("1 reference will no longer resolve", dialog.Explanation, StringComparison.Ordinal);
         Assert.True(dialog.IsDanger);
         dialog.ConfirmCommand.Execute(null);
         Settle();
@@ -156,6 +165,29 @@ public sealed class EditingWindowTests : IDisposable
         dialog.CancelCommand.Execute(null);
         Settle();
         Assert.NotNull(shell.Workspace!.Find("Sample::Wheel"));
+    }
+
+    /// <summary>Export writes the whole workspace where the dialog says, in the format it says.</summary>
+    [AvaloniaFact]
+    public async Task ExportWritesJsonAndXmi()
+    {
+        var (_, shell) = Open();
+        foreach (var xmi in new[] { false, true })
+        {
+            var export = shell.ExportCommand.ExecuteAsync(null);
+            Settle();
+            var dialog = Assert.IsType<ExportDialogViewModel>(shell.Dialog);
+            dialog.IsXmi = xmi;
+            dialog.ConfirmCommand.Execute(null);
+            await export;
+            Settle();
+
+            Assert.Null(shell.Dialog);
+            Assert.StartsWith("Exported to export/", shell.SaveState, StringComparison.Ordinal);
+            var text = await File.ReadAllTextAsync(dialog.FullPath);
+            Assert.Contains("Vehicle", text, StringComparison.Ordinal);
+            Assert.StartsWith(xmi ? "<?xml" : "[", text.TrimStart(), StringComparison.Ordinal);
+        }
     }
 
     [AvaloniaFact]

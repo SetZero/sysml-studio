@@ -8,19 +8,17 @@
     <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
   </Style>
 
-  <!-- Group and section labels: small, spaced capitals, quiet. -->
+  <!-- Panel captions: small, spaced capitals, quiet. "MODEL", "RECENT". -->
   <Style Selector="TextBlock.caption">
-    <Setter Property="FontSize" Value="10.5" />
-    <Setter Property="LetterSpacing" Value="1.6" />
-    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="LetterSpacing" Value="1.8" />
     <Setter Property="Foreground" Value="{DynamicResource TextFaintBrush}" />
   </Style>
 
-  <Style Selector="TextBlock.pane-title">
+  <!-- Section labels in the inspector and dialogs: "Specializes", "Save to". -->
+  <Style Selector="TextBlock.label">
     <Setter Property="FontSize" Value="12.5" />
-    <Setter Property="LetterSpacing" Value="1.5" />
-    <Setter Property="FontWeight" Value="Medium" />
-    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFaintBrush}" />
   </Style>
 
   <Style Selector="TextBlock.mono">
@@ -29,8 +27,11 @@
   </Style>
 
   <Style Selector="TextBlock.heading">
-    <Setter Property="FontSize" Value="23" />
-    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="FontSize" Value="22" />
+  </Style>
+
+  <Style Selector="TextBlock.title">
+    <Setter Property="FontSize" Value="20" />
   </Style>
 
   <Style Selector="TextBlock.muted">
@@ -55,17 +56,19 @@
     <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="FontSize" Value="14" />
   </Style>
-  <Style Selector="Button:disabled, ToggleButton:disabled">
-    <Setter Property="Opacity" Value="0.42" />
+  <Style Selector="Button:disabled">
+    <Setter Property="Opacity" Value="0.4" />
   </Style>
 
-  <!-- Transparent buttons: ribbon commands, title-strip icons, chips. -->
+  <!-- Transparent buttons: icons in the title bar, the activity bar, rows. -->
   <Style Selector="Button.flat, ToggleButton.flat">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Padding" Value="5,3" />
+    <Setter Property="Padding" Value="6,4" />
     <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
   </Style>
   <Style Selector="Button.flat:pointerover /template/ ContentPresenter#PART_ContentPresenter,
                    ToggleButton.flat:pointerover /template/ ContentPresenter#PART_ContentPresenter">
@@ -73,96 +76,82 @@
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
   </Style>
   <Style Selector="Button.flat:pressed /template/ ContentPresenter#PART_ContentPresenter,
-                   ToggleButton.flat:checked /template/ ContentPresenter#PART_ContentPresenter,
-                   ToggleButton.flat:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                   Button.flat.active /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.flat.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
   </Style>
   <Style Selector="Button.flat:disabled /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
   </Style>
 
-  <!-- A large ribbon command: icon above a label that may wrap to two lines. -->
-  <Style Selector="Button.ribbon-large, ToggleButton.ribbon-large">
-    <Setter Property="Padding" Value="8,5" />
-    <Setter Property="MinWidth" Value="58" />
-    <Setter Property="VerticalAlignment" Value="Stretch" />
-    <Setter Property="HorizontalContentAlignment" Value="Center" />
-    <Setter Property="VerticalContentAlignment" Value="Top" />
-  </Style>
-
-  <!-- A small ribbon command: icon beside its label, stacked three high. -->
-  <Style Selector="Button.ribbon-small">
-    <Setter Property="Padding" Value="5,2" />
+  <!-- A row in a list: full width, no chrome, a hover tint. -->
+  <Style Selector="Button.row">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
-    <Setter Property="HorizontalContentAlignment" Value="Left" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
   </Style>
 
-  <!-- Bordered white buttons: toolbox entries, element operations, dialogs. -->
+  <!-- Text links: "Change", "Used in 5 places", a source position. -->
+  <Style Selector="Button.link">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.link:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentHoverBrush}" />
+  </Style>
+
+  <!-- Bordered white buttons: "Export", "Cancel", "Try sample". -->
   <Style Selector="Button.outline">
     <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="Padding" Value="9,6" />
-    <Setter Property="FontSize" Value="13" />
-    <Setter Property="HorizontalAlignment" Value="Stretch" />
-    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Padding" Value="12,6" />
   </Style>
   <Style Selector="Button.outline:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
   </Style>
-  <Style Selector="Button.outline.danger">
-    <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+  <Style Selector="Button.strong">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13" />
   </Style>
 
   <Style Selector="Button.primary">
     <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="Padding" Value="13,7" />
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13" />
   </Style>
   <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
   </Style>
-
-  <!-- ===== Ribbon groups ===== -->
-
-  <Style Selector="Border.group">
-    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-    <Setter Property="BorderThickness" Value="0,0,1,0" />
-    <Setter Property="Padding" Value="10,6,10,4" />
+  <Style Selector="Button.primary.danger">
+    <Setter Property="Background" Value="{DynamicResource ErrorBrush}" />
   </Style>
-  <Style Selector="TextBlock.label">
-    <Setter Property="FontSize" Value="12.5" />
-    <Setter Property="TextAlignment" Value="Center" />
-    <Setter Property="TextWrapping" Value="Wrap" />
-    <Setter Property="MaxWidth" Value="72" />
-    <Setter Property="LineHeight" Value="15" />
-  </Style>
-  <Style Selector="Button.ribbon-large ic|SymbolIcon, ToggleButton.ribbon-large ic|SymbolIcon">
-    <Setter Property="FontSize" Value="25" />
-    <Setter Property="HorizontalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="0,2,0,5" />
-    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-  </Style>
-  <Style Selector="Button.ribbon-small ic|SymbolIcon">
-    <Setter Property="FontSize" Value="16" />
-    <Setter Property="Margin" Value="0,0,8,0" />
-    <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-  </Style>
-  <Style Selector="Button.ribbon-large.active /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+  <Style Selector="Button.primary.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ErrorBrush}" />
+    <Setter Property="Opacity" Value="0.9" />
   </Style>
 
-  <!-- ===== Tabs made of radio buttons: the ribbon's and the bottom panel's ===== -->
+  <!-- ===== Segmented controls: the diagram kinds, maturity, export format ===== -->
 
-  <Style Selector="RadioButton.tab">
+  <Style Selector="Border.segmented">
+    <Setter Property="Background" Value="{DynamicResource SegmentBrush}" />
+    <Setter Property="Padding" Value="3" />
+  </Style>
+  <Style Selector="RadioButton.segment, Button.segment">
     <Setter Property="Template">
       <ControlTemplate>
         <Border Name="PART_Border"
@@ -172,139 +161,150 @@
                 Padding="{TemplateBinding Padding}">
           <ContentPresenter Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
-                            VerticalAlignment="Center" />
+                            HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="Padding" Value="11,4" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="RadioButton.segment:pointerover, Button.segment:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="RadioButton.segment:checked, Button.segment.active">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="Button.segment:disabled">
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+
+  <!-- ===== Tabs ===== -->
+
+  <!-- A document tab: text, an optional dot; the one in front is underlined. -->
+  <Style Selector="Button.doc-tab">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+    <Setter Property="Padding" Value="13,0" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="Button.doc-tab:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="Button.doc-tab.active">
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="Button.doc-tab.active /template/ ContentPresenter#PART_ContentPresenter,
+                   Button.doc-tab.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource CanvasBrush}" />
+    <Setter Property="BoxShadow" Value="inset 0 -2 0 0 #6482A9" />
+  </Style>
+
+  <!-- The close button shows on the tab under the pointer and on the one in front. -->
+  <Style Selector="Panel.tab Button.tab-close">
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+  <Style Selector="Panel.tab:pointerover Button.tab-close">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <!-- A panel tab: "Problems · 3". The selected one is tinted. -->
+  <Style Selector="RadioButton.chip-tab">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}" VerticalAlignment="Center" />
         </Border>
       </ControlTemplate>
     </Setter>
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-    <Setter Property="Padding" Value="14,7" />
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Padding" Value="10,4" />
     <Setter Property="Cursor" Value="Hand" />
   </Style>
-  <Style Selector="RadioButton.tab:pointerover">
+  <Style Selector="RadioButton.chip-tab:checked">
+    <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-  </Style>
-
-  <!-- Ribbon tab: the selected one is a raised card joined to the body. -->
-  <Style Selector="RadioButton.ribbon-tab">
-    <Setter Property="BorderThickness" Value="1,1,1,0" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="Margin" Value="0,0,0,-1" />
-  </Style>
-  <Style Selector="RadioButton.ribbon-tab:checked">
-    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-  </Style>
-
-  <!-- Panel tab: the selected one is underlined. -->
-  <Style Selector="RadioButton.panel-tab">
-    <Setter Property="FontSize" Value="13" />
-    <Setter Property="Padding" Value="14,8" />
-    <Setter Property="BorderThickness" Value="0,0,1,0" />
-    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-  </Style>
-  <Style Selector="RadioButton.panel-tab:checked">
-    <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
-    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-  </Style>
-  <Style Selector="RadioButton.panel-tab:checked /template/ Border#PART_Border">
-    <Setter Property="BoxShadow" Value="inset 0 2 0 0 #56759B" />
   </Style>
 
   <!-- ===== Inputs ===== -->
 
-  <Style Selector="TextBox, AutoCompleteBox">
+  <Style Selector="TextBox, AutoCompleteBox, ComboBox">
     <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
     <Setter Property="CornerRadius" Value="0" />
   </Style>
   <Style Selector="TextBox.field">
     <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="FontSize" Value="13" />
-    <Setter Property="MinHeight" Value="30" />
-    <Setter Property="Padding" Value="8,5" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBrush}" />
+    <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TextBrush}" />
   </Style>
-
-  <!-- ===== Chips ===== -->
-
-  <Style Selector="Border.chip">
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
-    <Setter Property="Padding" Value="8,3" />
-  </Style>
-  <Style Selector="Border.chip TextBlock">
-    <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
-    <Setter Property="FontSize" Value="11.5" />
-    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
-  </Style>
-  <Style Selector="Border.chip.outlined">
-    <Setter Property="Background" Value="Transparent" />
+  <Style Selector="TextBox.field:focus /template/ Border#PART_BorderElement">
     <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
   </Style>
-  <Style Selector="Border.chip.plain">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-  <Style Selector="Border.chip.plain TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  <Style Selector="TextBox.field:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
   </Style>
 
-  <!-- ===== Model browser ===== -->
+  <!-- ===== Tooltips: dark, mono, square ===== -->
 
-  <Style Selector="TreeViewItem">
-    <Setter Property="MinHeight" Value="27" />
-    <Setter Property="Padding" Value="0" />
+  <Style Selector="ToolTip">
+    <Setter Property="Background" Value="{DynamicResource TooltipBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnTooltipBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="9,5" />
+    <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <!-- ===== Menus ===== -->
+
+  <Style Selector="ContextMenu, MenuFlyoutPresenter">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
+  </Style>
+  <Style Selector="MenuItem">
+    <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
     <Setter Property="FontSize" Value="14" />
   </Style>
-  <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
-    <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
+
+  <!-- ===== Model tree ===== -->
+
+  <Style Selector="TreeViewItem">
+    <Setter Property="MinHeight" Value="29" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="FontSize" Value="14.5" />
   </Style>
-  <Style Selector="TreeViewItem:selected:focus /template/ Border#PART_LayoutRoot">
+  <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot,
+                   TreeViewItem:selected:focus /template/ Border#PART_LayoutRoot,
+                   TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
     <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
   </Style>
   <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
   </Style>
-
-  <!-- ===== Tables (problems, usages) ===== -->
-
-  <Style Selector="ListBox.table">
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Padding" Value="0" />
-  </Style>
-  <Style Selector="ListBox.table ListBoxItem">
-    <Setter Property="Padding" Value="12,5" />
-    <Setter Property="MinHeight" Value="0" />
-    <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
-    <Setter Property="FontSize" Value="12" />
-  </Style>
-  <Style Selector="ListBox.table ListBoxItem:selected /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
-  </Style>
-  <Style Selector="ListBox.table ListBoxItem:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
-  </Style>
-
-  <!-- ===== Dock chrome, restyled to the design ===== -->
-
-  <Style Selector="ToolChromeControl /template/ TextBlock#PART_Title">
-    <Setter Property="FontSize" Value="12.5" />
-    <Setter Property="LetterSpacing" Value="1.5" />
-    <Setter Property="FontWeight" Value="Medium" />
-    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-    <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="4,0,0,0" />
-  </Style>
-  <Style Selector="ToolChromeControl /template/ Border#PART_Border">
-    <Setter Property="MinHeight" Value="34" />
-  </Style>
-  <Style Selector="DocumentTabStripItem">
-    <Setter Property="FontSize" Value="14" />
-    <Setter Property="MinHeight" Value="36" />
+  <Style Selector="TreeViewItem /template/ ToggleButton#PART_ExpandCollapseChevron">
+    <Setter Property="Foreground" Value="{DynamicResource TextFaintBrush}" />
   </Style>
 
 </Styles>

@@ -1,86 +1,111 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+             xmlns:ic="using:FluentIcons.Avalonia"
              x:Class="SysmlStudio.App.Views.PropertiesView"
-             x:DataType="vm:PropertiesViewModel"
-             Background="{DynamicResource SurfaceBrush}">
+             x:DataType="vm:PropertiesViewModel">
   <Panel>
-    <TextBlock Text="Nothing selected." Classes="muted" FontSize="13.5" Margin="14,16"
+    <TextBlock Text="Nothing selected" Classes="faint" FontSize="14" Margin="18,20"
                IsVisible="{Binding !HasElement}" />
 
-    <ScrollViewer IsVisible="{Binding HasElement}">
-      <StackPanel>
-        <!-- What it is -->
-        <StackPanel Margin="14,14,14,12" Spacing="2">
-          <TextBlock Text="{Binding KindCaption}" Classes="caption" />
-          <TextBlock Text="{Binding Name}" Classes="heading" TextTrimming="CharacterEllipsis" />
-          <TextBlock Text="{Binding QualifiedName}" Classes="mono muted" FontSize="12" TextTrimming="CharacterEllipsis" />
-        </StackPanel>
+    <DockPanel IsVisible="{Binding HasElement}">
+      <!-- How many places name it, and where it is written -->
+      <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+              Padding="18,0" Height="48">
+        <Grid ColumnDefinitions="Auto,*">
+          <Button Classes="link" Command="{Binding FindUsagesCommand}" VerticalAlignment="Center"
+                  ToolTip.Tip="Find usages (Shift+F12)">
+            <TextBlock Text="{Binding UsedIn}" FontSize="13.5" Classes="link" />
+          </Button>
+          <Button Grid.Column="1" Classes="link" Command="{Binding OpenSourceCommand}" VerticalAlignment="Center"
+                  HorizontalAlignment="Right" Margin="12,0,0,0" ToolTip.Tip="{Binding SourceLink, StringFormat='Go to {0}'}">
+            <TextBlock Text="{Binding SourceLink}" Classes="mono link" FontSize="12" TextTrimming="LeadingCharacterEllipsis" />
+          </Button>
+        </Grid>
+      </Border>
 
-        <!-- Name / value rows -->
-        <ItemsControl ItemsSource="{Binding Rows}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:PropertyRow">
-              <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
-                <Grid ColumnDefinitions="118,*" MinHeight="34">
-                  <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0" Padding="14,0">
-                    <TextBlock Text="{Binding Name}" Classes="muted" FontSize="13" VerticalAlignment="Center" />
-                  </Border>
-                  <Panel Grid.Column="1" Margin="10,4">
-                    <TextBlock Text="{Binding Value}" Classes="mono" FontSize="12.5" VerticalAlignment="Center"
-                               TextWrapping="Wrap" IsVisible="{Binding IsPlain}" />
-                    <Button Classes="flat" Padding="2,1" HorizontalAlignment="Left"
-                            Command="{Binding $parent[ItemsControl].((vm:PropertiesViewModel)DataContext).FollowCommand}"
-                            CommandParameter="{Binding}" IsVisible="{Binding IsLink}">
-                      <TextBlock Text="{Binding Value}" Classes="mono link" FontSize="12.5" TextWrapping="Wrap" />
-                    </Button>
-                    <Border Classes="chip" HorizontalAlignment="Left" VerticalAlignment="Center" IsVisible="{Binding IsChip}">
-                      <TextBlock Text="{Binding Value}" />
-                    </Border>
-                  </Panel>
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-        <!-- Doc comment -->
-        <StackPanel Margin="14,16,14,0" Spacing="8">
-          <TextBlock Text="DOC COMMENT" Classes="caption" />
-          <Border Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                  BorderThickness="1" Padding="10,9" MinHeight="72">
-            <Panel>
-              <TextBlock Text="{Binding Documentation}" TextWrapping="Wrap" FontSize="13.5" IsVisible="{Binding HasDocumentation}" />
-              <TextBlock Text="No doc comment." Classes="faint" FontSize="13.5" IsVisible="{Binding !HasDocumentation}" />
-            </Panel>
-          </Border>
-        </StackPanel>
-
-        <!-- Element operations -->
-        <StackPanel Margin="14,20,14,16" Spacing="8">
-          <TextBlock Text="ELEMENT OPERATIONS" Classes="caption" />
-          <Grid ColumnDefinitions="*,6,*" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto">
-            <Button Grid.Row="0" Grid.Column="0" Classes="outline" Content="Rename…"
-                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).RenameCommand}" />
-            <Button Grid.Row="0" Grid.Column="2" Classes="outline" Content="Set typing…"
-                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).SetTypeCommand}" />
-            <Button Grid.Row="2" Grid.Column="0" Classes="outline" Content="Add part"
-                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).AddCommand}" CommandParameter="part" />
-            <Button Grid.Row="2" Grid.Column="2" Classes="outline" Content="Add port"
-                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).AddCommand}" CommandParameter="port" />
-            <Button Grid.Row="4" Grid.Column="0" Classes="outline" Content="Add satisfy"
-                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).AddSatisfyCommand}" />
-            <Button Grid.Row="4" Grid.Column="2" Classes="outline" Content="Doc comment…"
-                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).EditDocCommand}" />
-            <Button Grid.Row="6" Grid.Column="0" Classes="outline" Content="Specializes…"
-                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).SpecializeCommand}" />
-            <Button Grid.Row="6" Grid.Column="2" Classes="outline danger" Content="Delete"
-                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).DeleteCommand}" />
+      <ScrollViewer>
+        <StackPanel Margin="18,18,14,18" Spacing="18">
+          <!-- What it is -->
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2">
+              <TextBlock Text="{Binding KindCaption}" Classes="label" />
+              <TextBlock Text="{Binding Name}" Classes="heading" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+              <TextBlock Text="{Binding Owner}" Classes="mono faint" FontSize="11.5" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Spacing="2">
+              <Button Classes="flat" Padding="5" ToolTip.Tip="Rename (F2)"
+                      Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).RenameCommand}">
+                <ic:SymbolIcon Symbol="Edit" FontSize="16" />
+              </Button>
+              <Button Classes="flat" Padding="5" ToolTip.Tip="Delete"
+                      Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).DeleteCommand}">
+                <ic:SymbolIcon Symbol="Delete" FontSize="16" />
+              </Button>
+            </StackPanel>
           </Grid>
-          <TextBlock Classes="mono faint" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
-                     Text="every operation → a text patch · re-parse gate · undo (Ctrl+Z) · Save writes the files" />
+
+          <!-- What it specializes, holds and relates to -->
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="16" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:PropertyRow">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="{Binding Name}" Classes="label" />
+                  <TextBlock Text="{Binding Value}" FontSize="14" TextWrapping="Wrap" IsVisible="{Binding IsPlain}" />
+                  <Button Classes="link" HorizontalAlignment="Left" IsVisible="{Binding IsLink}"
+                          Command="{Binding $parent[ItemsControl].((vm:PropertiesViewModel)DataContext).FollowCommand}"
+                          CommandParameter="{Binding}" ToolTip.Tip="Select it">
+                    <TextBlock Text="{Binding Value}" FontSize="14" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextBrush}" />
+                  </Button>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- Maturity: the keywords the model declares -->
+          <StackPanel Spacing="6" IsVisible="{Binding HasMaturity}">
+            <TextBlock Text="Maturity" Classes="label" />
+            <Border Classes="segmented">
+              <ItemsControl ItemsSource="{Binding Maturity}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Columns="{Binding $parent[ItemsControl].((vm:PropertiesViewModel)DataContext).MaturityColumns}" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:MaturityOption">
+                    <Button Classes="segment" Classes.active="{Binding IsCurrent}" Padding="4,5"
+                            Command="{Binding $parent[ItemsControl].((vm:PropertiesViewModel)DataContext).PickMaturityCommand}"
+                            CommandParameter="{Binding}" ToolTip.Tip="{Binding Keyword, StringFormat='#{0}'}">
+                      <TextBlock Text="{Binding Label}" FontSize="12.5" TextTrimming="CharacterEllipsis" />
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+          </StackPanel>
+
+          <!-- Doc comment -->
+          <StackPanel Spacing="4">
+            <TextBlock Text="Description" Classes="label" />
+            <Button Classes="link" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                    Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).EditDocCommand}"
+                    ToolTip.Tip="Edit the doc comment">
+              <Panel>
+                <TextBlock Text="{Binding Documentation}" FontSize="14" TextWrapping="Wrap" LineHeight="21"
+                           Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding HasDocumentation}" />
+                <TextBlock Text="Add a description…" FontSize="14" Classes="faint" IsVisible="{Binding !HasDocumentation}" />
+              </Panel>
+            </Button>
+          </StackPanel>
         </StackPanel>
-      </StackPanel>
-    </ScrollViewer>
+      </ScrollViewer>
+    </DockPanel>
   </Panel>
 </UserControl>
