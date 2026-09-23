@@ -54,13 +54,29 @@ public enum RelationKind
 /// <see cref="Target"/> is what the name resolver made of it, or null when the
 /// reference points outside the loaded model.
 /// </summary>
-public sealed class Relation(RelationKind kind, Element source, string targetReference, string? label = null)
+public sealed class Relation(RelationKind kind, Element source, string targetReference, string? label = null,
+                             string? originReference = null)
 {
     public RelationKind Kind { get; } = kind;
+
+    /// <summary>The element that declares the relation: the part, the "dependency", the "satisfy".</summary>
     public Element Source { get; } = source;
+
     public string TargetReference { get; } = targetReference;
     public string? Label { get; } = label;
     public Element? Target { get; internal set; }
+
+    /// <summary>
+    /// The other end, for relations written as their own statement: the client
+    /// of "dependency from a to b", the subject of "satisfy R by x", the first
+    /// end of "connect a to b". Null where the declaring element is the end.
+    /// </summary>
+    public string? OriginReference { get; } = originReference;
+
+    public Element? Origin { get; internal set; }
+
+    /// <summary>Where the arrow starts: the resolved origin, or else the element that declares it.</summary>
+    public Element? From => OriginReference is null ? Source : Origin;
 
     public override string ToString() => $"{Source.QualifiedName} -{Kind}-> {TargetReference}";
 }
@@ -111,7 +127,11 @@ public sealed class Element
 
     public int Line => Context.Start.Line;
     public int StartTokenIndex => Context.Start.TokenIndex;
-    public int StopTokenIndex => (Context.Stop ?? Context.Start).TokenIndex;
+    /// <summary>
+    /// The last token. An empty rule (an anonymous "entry;") has its stop before
+    /// its start in ANTLR's terms; such an element is one token wide here.
+    /// </summary>
+    public int StopTokenIndex => Math.Max(StartTokenIndex, (Context.Stop ?? Context.Start).TokenIndex);
 
     /// <summary>"::"-joined names of the named elements from the root down to this one.</summary>
     public string QualifiedName

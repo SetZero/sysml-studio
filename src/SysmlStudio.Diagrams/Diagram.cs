@@ -22,10 +22,22 @@ public enum DiagramKind
 }
 
 /// <summary>One box. <see cref="Element"/> is what it stands for in the model.</summary>
-public sealed class DiagramNode(Element element, string label, string? stereotype = null)
+public sealed class DiagramNode(Element element, string label, string? stereotype = null, string? pseudo = null)
 {
     public Element Element { get; } = element;
     public string Label { get; } = label;
+
+    /// <summary>
+    /// "start" or "done" for an action flow's initial and final nodes. They are
+    /// written in the model ("first start", "then done") but are not elements
+    /// of it, so a pseudo node stands on the diagram's own root.
+    /// </summary>
+    public string? Pseudo { get; } = pseudo;
+
+    public bool IsPseudo => Pseudo is not null;
+
+    /// <summary>What the node is stored under in the sidecar file.</summary>
+    public string Key => Pseudo is null ? Element.QualifiedName : $"{Element.QualifiedName}#{Pseudo}";
 
     /// <summary>What is shown above the name: "«part def»".</summary>
     public string? Stereotype { get; } = stereotype;
@@ -76,5 +88,7 @@ public sealed class Diagram(DiagramKind kind, Element root)
     public List<DiagramNode> Nodes { get; } = [];
     public List<DiagramEdge> Edges { get; } = [];
 
-    public DiagramNode? NodeFor(Element element) => Nodes.Find(n => ReferenceEquals(n.Element, element));
+    public DiagramNode? NodeFor(Element element) => Nodes.Find(n => !n.IsPseudo && ReferenceEquals(n.Element, element));
+
+    public DiagramNode? PseudoNode(string pseudo) => Nodes.Find(n => n.Pseudo == pseudo);
 }

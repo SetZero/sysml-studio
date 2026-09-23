@@ -82,6 +82,12 @@ public static class ModelIndexer
                 continue;
             }
 
+            if (rule == "actionBody")
+            {
+                WalkActionBody(ctx, parent, file);
+                continue;
+            }
+
             if (TryKind(rule, out var kind))
             {
                 var element = new Element(kind, file, ctx);
@@ -93,6 +99,65 @@ public static class ModelIndexer
             {
                 Walk(child, parent, file);
             }
+        }
+    }
+
+    /// <summary>
+    /// An action's body, read in order so that the shorthand successions become
+    /// relations: "first start; then action a; then action b; then done;" is
+    /// start, a, b, done in that order, though only "first" and "then" say so.
+    /// </summary>
+    private static void WalkActionBody(ParserRuleContext body, Element owner, SourceFile file)
+    {
+        string? previous = null;
+        for (var i = 0; i < body.ChildCount; i++)
+        {
+            if (body.GetChild(i) is not ParserRuleContext item)
+                continue;
+
+            var before = owner.Children.Count;
+            WalkOne(item, owner, file);
+            var added = owner.Children.Skip(before).LastOrDefault(c => c.Name is not null);
+
+            var initial = FindShallow(item, "initialNodeMember").FirstOrDefault();
+            if (initial is not null)
+            {
+                previous = FindShallow(initial, "qualifiedName").FirstOrDefault()?.GetText();
+                continue;
+            }
+
+            var isThen = FindShallow(item, "sourceSuccessionMember").Count > 0;
+            if (added?.Name is { } addedName)
+            {
+                if (isThen && previous is not null)
+                    owner.Add(new Relation(RelationKind.Succession, owner, addedName, originReference: previous));
+                previous = addedName;
+            }
+
+            var targetSuccession = FindShallow(item, "actionTargetSuccessionMember").FirstOrDefault();
+            var end = targetSuccession is null ? null : FindShallow(targetSuccession, "connectorEndMember").FirstOrDefault();
+            if (end is not null && previous is not null)
+            {
+                var target = Written(end);
+                owner.Add(new Relation(RelationKind.Succession, owner, target, originReference: previous));
+                previous = target;
+            }
+        }
+    }
+
+    /// <summary>Walks one context as if it were a node's only child.</summary>
+    private static void WalkOne(ParserRuleContext ctx, Element parent, SourceFile file)
+    {
+        if (TryKind(RuleName(ctx), out var kind))
+        {
+            var element = new Element(kind, file, ctx);
+            Describe(element, ctx);
+            parent.Add(element);
+            Walk(ctx, element, file);
+        }
+        else
+        {
+            Walk(ctx, parent, file);
         }
     }
 
@@ -212,19 +277,22 @@ public static class ModelIndexer
             var ends = FindShallow(ctx, "connectorEndMember", "interfaceEndMember", "messageEventMember")
                 .ConvertAll(Written);
             for (var i = 0; i + 1 < ends.Count; i++)
-                element.Add(new Relation(ck, element, ends[i + 1], ends[i]));
+                element.Add(new Relation(ck, element, ends[i + 1], element.Name, ends[i]));
         }
 
         switch (element.Kind)
         {
             case "satisfy":
                 {
+                    // "satisfy R by x": one arrow, from what satisfies to what is satisfied.
                     var requirement = FindShallow(ctx, "ownedReferenceSubsetting").FirstOrDefault();
-                    if (requirement is not null)
-                        element.Add(new Relation(RelationKind.Satisfy, element, Written(requirement)));
                     var subject = FindShallow(ctx, "satisfactionSubjectMember").FirstOrDefault();
-                    if (subject is not null)
-                        element.Add(new Relation(RelationKind.Satisfy, element, Written(subject), "by"));
+                    if (requirement is not null)
+                    {
+                        element.Add(new Relation(RelationKind.Satisfy, element, Written(requirement),
+                            originReference: subject is null ? null : Written(subject)));
+                    }
+
                     break;
                 }
 
@@ -248,7 +316,7 @@ public static class ModelIndexer
                             .OfType<ParserRuleContext>()
                             .Select(Written));
                         element.Add(new Relation(RelationKind.Transition, element, Written(target),
-                            label.Length == 0 ? null : label));
+                            label.Length == 0 ? null : label, Written(source)));
                         element.Value = Written(source);
                     }
 
@@ -259,23 +327,32 @@ public static class ModelIndexer
                 {
                     var ends = FindShallow(ctx, "connectorEndMember").ConvertAll(Written);
                     for (var i = 0; i + 1 < ends.Count; i++)
-                        element.Add(new Relation(RelationKind.Succession, element, ends[i + 1], ends[i]));
+                        element.Add(new Relation(RelationKind.Succession, element, ends[i + 1], element.Name, ends[i]));
                     break;
                 }
 
             case "dependency":
                 {
-                    foreach (var target in DependencyTargets(ctx))
-                        element.Add(new Relation(RelationKind.Dependency, element, target));
+                    // "dependency from a, b to c, d": an arrow from each client to each supplier.
+                    var (clients, suppliers) = DependencyEnds(ctx);
+                    foreach (var supplier in suppliers)
+                    {
+                        if (clients.Count == 0)
+                            element.Add(new Relation(RelationKind.Dependency, element, supplier));
+                        foreach (var client in clients)
+                            element.Add(new Relation(RelationKind.Dependency, element, supplier, originReference: client));
+                    }
+
                     break;
                 }
         }
     }
 
-    /// <summary>The qualified names a dependency names after its "to".</summary>
-    private static List<string> DependencyTargets(ParserRuleContext ctx)
+    /// <summary>The names a dependency lists after "from" and after "to".</summary>
+    private static (List<string> Clients, List<string> Suppliers) DependencyEnds(ParserRuleContext ctx)
     {
-        var targets = new List<string>();
+        var clients = new List<string>();
+        var suppliers = new List<string>();
         var afterTo = false;
         for (var i = 0; i < ctx.ChildCount; i++)
         {
@@ -287,11 +364,11 @@ public static class ModelIndexer
                 continue;
             }
 
-            if (afterTo && child is ParserRuleContext q && RuleName(q) == "qualifiedName")
-                targets.Add(q.GetText());
+            if (child is ParserRuleContext q && RuleName(q) == "qualifiedName")
+                (afterTo ? suppliers : clients).Add(q.GetText());
         }
 
-        return targets;
+        return (clients, suppliers);
     }
 
     /// <summary>
@@ -321,6 +398,9 @@ public static class ModelIndexer
 
                 if (!isRoot && TryKind(rule, out _))
                     continue; // a nested element owns whatever is inside it
+
+                if (rule is "metadataFeature" or "prefixMetadataMember" or "prefixMetadataAnnotation")
+                    continue; // metadata is read on its own, never as the element's value or type
 
                 Collect(child, false);
             }

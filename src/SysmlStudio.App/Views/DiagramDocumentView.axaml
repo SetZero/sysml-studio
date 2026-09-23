@@ -31,6 +31,11 @@
       <Setter Property="Fill" Value="{DynamicResource CanvasBrush}" />
       <Setter Property="ArrowSize" Value="13,11" />
     </Style>
+    <Style Selector="nodifyc|LineConnection.composition">
+      <Setter Property="ArrowEnds" Value="Both" />
+      <Setter Property="ArrowShape" Value="Rectangle" />
+      <Setter Property="ArrowSize" Value="7,7" />
+    </Style>
     <Style Selector="nodifyc|LineConnection.trace">
       <Setter Property="StrokeDashArray" Value="5,4" />
       <Setter Property="Fill" Value="Transparent" />
@@ -84,7 +89,14 @@
 
         <nodify:NodifyEditor.ItemTemplate>
           <DataTemplate x:DataType="vm:DiagramNodeViewModel">
-            <Border Width="{Binding Width}" MinHeight="{Binding Height}"
+            <Panel>
+            <!-- start and done: UML's initial and final nodes -->
+            <Panel Width="{Binding Width}" Height="{Binding Height}" IsVisible="{Binding IsPseudo}">
+              <Ellipse Width="18" Height="18" Fill="{DynamicResource TextMutedBrush}" IsVisible="{Binding IsStart}" />
+              <Ellipse Width="24" Height="24" Stroke="{DynamicResource TextMutedBrush}" StrokeThickness="1.5" IsVisible="{Binding IsDone}" />
+              <Ellipse Width="12" Height="12" Fill="{DynamicResource TextMutedBrush}" IsVisible="{Binding IsDone}" />
+            </Panel>
+            <Border Width="{Binding Width}" MinHeight="{Binding Height}" IsVisible="{Binding IsBox}"
                     Background="{DynamicResource SurfaceRaisedBrush}"
                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
               <DockPanel>
@@ -111,6 +123,7 @@
                 </StackPanel>
               </DockPanel>
             </Border>
+            </Panel>
           </DataTemplate>
         </nodify:NodifyEditor.ItemTemplate>
 
@@ -135,6 +148,7 @@
                                     SourceOffset="{Binding Source.HalfSize}"
                                     TargetOffset="{Binding Target.HalfSize}"
                                     Classes.generalization="{Binding IsGeneralization}"
+                                    Classes.composition="{Binding IsComposition}"
                                     Classes.trace="{Binding IsDashed}"
                                     ToolTip.Tip="{Binding Description}" />
           </DataTemplate>

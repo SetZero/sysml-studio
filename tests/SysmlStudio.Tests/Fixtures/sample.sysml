@@ -36,6 +36,16 @@ package Sample {
 
     satisfy MustStart by Vehicle::engine;
 
+    requirement def MustStopToo;
+    dependency from MustStopToo to MustStart;
+
+    action def Boot {
+        first start;
+        then action check;
+        then action load;
+        then done;
+    }
+
     action def StartUp {
         action crank;
         action idle;

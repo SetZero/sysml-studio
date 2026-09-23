@@ -110,6 +110,13 @@ public sealed class SysmlWorkspace
             .Select(e => new Diagnostic(Severity.Error, e.File, e.Line, e.Column + 1, e.Message))
             .ToList();
 
+        // Two passes: a feature chain ("ferrix.kernel.mm") walks through what
+        // parts are typed by, so every typing has to be resolved before any
+        // chain is followed to the end.
+        var relations = Elements.SelectMany(e => e.Relations).Where(r => r.Kind != RelationKind.Import).ToList();
+        foreach (var relation in relations)
+            relation.Target = Lookup(relation.TargetReference, relation.Source, byQualifiedName, byShortName);
+
         foreach (var element in Elements)
         {
             foreach (var relation in element.Relations)
@@ -117,7 +124,10 @@ public sealed class SysmlWorkspace
                 if (relation.Kind == RelationKind.Import)
                     continue;
 
-                relation.Target = Lookup(relation.TargetReference, element, byQualifiedName, byShortName);
+                relation.Target = Resolve(relation.TargetReference, element, byQualifiedName, byShortName);
+                if (relation.OriginReference is { } origin)
+                    relation.Origin = Resolve(origin, element, byQualifiedName, byShortName);
+
                 if (relation.Target is not null || MayComeFromOutside(relation.TargetReference, element, byQualifiedName))
                     continue;
 
@@ -160,6 +170,54 @@ public sealed class SysmlWorkspace
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Resolves a name, following a feature chain as far as the model goes:
+    /// "ferrix.kernel.mm" is the part ferrix, then the part kernel inside what
+    /// ferrix is typed by, then mm inside that. It stops at the deepest element
+    /// found rather than failing, so a chain into the standard library still
+    /// points at the part it starts from.
+    /// </summary>
+    private static Element? Resolve(string reference, Element from,
+                                    Dictionary<string, Element> byQualifiedName,
+                                    Dictionary<string, Element> byShortName)
+    {
+        var head = Lookup(reference, from, byQualifiedName, byShortName);
+        var dot = reference.IndexOf('.');
+        if (head is null || dot < 0)
+            return head;
+
+        var current = head;
+        var segments = reference[(dot + 1)..].Split('.', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        foreach (var segment in segments)
+        {
+            var next = FeatureNamed(current, segment.Trim('\''), depth: 0);
+            if (next is null)
+                break;
+            current = next;
+        }
+
+        return current;
+    }
+
+    /// <summary>A feature by name: owned, or owned by what the element is typed by or specializes.</summary>
+    private static Element? FeatureNamed(Element element, string name, int depth)
+    {
+        if (depth > 8)
+            return null;
+
+        var owned = element.Children.FirstOrDefault(c => c.Name == name);
+        if (owned is not null)
+            return owned;
+
+        foreach (var relation in element.Relations.Where(r => r.Kind is RelationKind.Typing or RelationKind.Specialization))
+        {
+            if (relation.Target is { } type && FeatureNamed(type, name, depth + 1) is { } inherited)
+                return inherited;
+        }
+
+        return null;
     }
 
     private static Element? Lookup(string reference, Element from,

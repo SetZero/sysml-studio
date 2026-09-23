@@ -34,6 +34,11 @@ public sealed partial class DiagramNodeViewModel(DiagramNode node) : ObservableO
 
     public string Maturity => _node.Maturity ?? "none";
 
+    public bool IsPseudo => _node.IsPseudo;
+    public bool IsBox => !_node.IsPseudo;
+    public bool IsStart => _node.Pseudo == "start";
+    public bool IsDone => _node.Pseudo == "done";
+
     /// <summary>Where a connection aims: the node's centre.</summary>
     public Point Anchor => new(Location.X + (Width / 2), Location.Y + (Height / 2));
 
@@ -90,6 +95,9 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
     /// <summary>Specialization and redefinition get UML's hollow triangle.</summary>
     public bool IsGeneralization => Kind is RelationKind.Specialization or RelationKind.Redefinition;
 
+    /// <summary>Composition is marked at the owner's end.</summary>
+    public bool IsComposition => Kind == RelationKind.Composition;
+
     public void Dispose()
     {
         Source.PropertyChanged -= OnEndMoved;
@@ -132,7 +140,8 @@ public sealed partial class DiagramDocumentViewModel : Document
     public ObservableCollection<DiagramConnectionViewModel> Connections { get; }
 
     /// <summary>The connections that carry a label, drawn on the canvas's decorator layer.</summary>
-    public IEnumerable<DiagramConnectionViewModel> Labels => Connections.Where(c => c.HasLabel);
+    public IEnumerable<DiagramConnectionViewModel> Labels
+        => Connections.Count <= 24 ? Connections.Where(c => c.HasLabel) : [];
 
     /// <summary>After a drag, every line is re-anchored, whatever the canvas reported on the way.</summary>
     [RelayCommand]

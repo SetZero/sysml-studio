@@ -116,11 +116,15 @@ public sealed partial class PropertiesViewModel : Tool
 
         foreach (var relation in e.Relations.Where(r => r.Kind is RelationKind.Satisfy or RelationKind.Verify
                      or RelationKind.Allocate or RelationKind.Dependency or RelationKind.Transition
-                     or RelationKind.Succession or RelationKind.Connect or RelationKind.Flow or RelationKind.Interface))
+                     or RelationKind.Connect or RelationKind.Flow or RelationKind.Interface))
         {
-            var label = relation.Label is { Length: > 0 } l ? $"{l} → " : string.Empty;
-            yield return new PropertyRow(relation.Kind.ToString(), label + relation.TargetReference.Trim(), target: relation.Target);
+            var from = relation.OriginReference is { Length: > 0 } o ? $"{o.Trim()} → " : string.Empty;
+            yield return new PropertyRow(relation.Kind.ToString(), from + relation.TargetReference.Trim(), target: relation.Target);
         }
+
+        var steps = e.Relations.Count(r => r.Kind == RelationKind.Succession);
+        if (steps > 0)
+            yield return new PropertyRow("Successions", $"{steps} — see the action flow");
 
         if (e.File is { } file && _shell.Workspace is { } workspace)
         {

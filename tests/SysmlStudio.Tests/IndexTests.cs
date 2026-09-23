@@ -95,8 +95,11 @@ public sealed class IndexTests
         var connect = workspace.Elements.Single(e => e.Kind == "connection");
 
         var relation = connect.Relations.Single(r => r.Kind == RelationKind.Connect);
-        Assert.Equal("engine.shaft", relation.Label);
+        Assert.Equal("engine.shaft", relation.OriginReference);
         Assert.Equal("wheels", relation.TargetReference);
+
+        // The chain resolves through what engine is typed by, down to the port.
+        Assert.Equal("Sample::Engine::shaft", relation.Origin?.QualifiedName);
     }
 
     [Fact]

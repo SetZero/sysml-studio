@@ -52,7 +52,7 @@ public sealed class DiagramTests
         Assert.Equal(2, diagram.Nodes.Count);
         var edge = Assert.Single(diagram.Edges);
         Assert.Equal("engine : Engine", edge.Source.Label);
-        Assert.Equal("wheels : Wheel", edge.Target.Label);
+        Assert.Equal("wheels : Wheel[4]", edge.Target.Label);
     }
 
     [Fact]
@@ -60,8 +60,10 @@ public sealed class DiagramTests
     {
         var diagram = DiagramBuilder.Build(DiagramKind.Requirements, Fixture().Find("Sample")!);
 
-        Assert.Contains(diagram.Nodes, n => n.Label == "R.1");
-        Assert.Contains(diagram.Edges, e => e.Kind == RelationKind.Satisfy && e.Target.Label == "R.1");
+        Assert.Contains(diagram.Nodes, n => n.Element.ShortName == "R.1");
+        Assert.Contains(diagram.Edges, e => e.Kind == RelationKind.Satisfy
+            && e.Target.Element.ShortName == "R.1"
+            && e.Source.Element.QualifiedName == "Sample::Vehicle::engine");
     }
 
     [Fact]
@@ -115,5 +117,56 @@ public sealed class DiagramTests
         DiagramLayout.Apply(diagram);
 
         Assert.All(diagram.Edges, e => Assert.NotEmpty(e.Waypoints));
+    }
+
+    [Fact]
+    public void ADefinitionDiagramDrawsCompositionFromTheOwnerToThePartsType()
+    {
+        var diagram = DiagramBuilder.Build(DiagramKind.Definition, Fixture().Find("Sample")!);
+
+        Assert.Contains(diagram.Edges, e => e.Kind == RelationKind.Composition
+            && e.Source.Label == "Vehicle" && e.Target.Label == "Engine" && e.Label == "engine");
+    }
+
+    [Fact]
+    public void OneDefinitionShowsWhatItIsMadeOfAndWhatIsMadeOfIt()
+    {
+        var workspace = Fixture();
+        var engine = DiagramBuilder.Build(DiagramKind.Definition, workspace.Find("Sample::Engine")!);
+
+        // Vehicle has a part typed by Engine, so it is one relation away.
+        Assert.Contains(engine.Nodes, n => n.Label == "Vehicle");
+        Assert.Contains(engine.Edges, e => e.Kind == RelationKind.Composition && e.Target.Label == "Engine");
+    }
+
+    [Fact]
+    public void ARequirementOffersItsOwnDiagram()
+    {
+        var requirement = Fixture().Find("Sample::MustStart")!;
+        Assert.Contains(DiagramKind.Requirements, DiagramBuilder.KindsFor(requirement));
+
+        var diagram = DiagramBuilder.Build(DiagramKind.Requirements, requirement);
+        Assert.Contains(diagram.Edges, e => e.Kind == RelationKind.Satisfy && ReferenceEquals(e.Target.Element, requirement));
+    }
+
+    [Fact]
+    public void ThenShorthandBecomesAFlowFromStartToDone()
+    {
+        var diagram = DiagramBuilder.Build(DiagramKind.ActionFlow, Fixture().Find("Sample::Boot")!);
+
+        static string Label(DiagramNode n) => n.Label;
+        var edges = diagram.Edges.ConvertAll(e => $"{Label(e.Source)}>{Label(e.Target)}");
+        Assert.Equal(["start>check", "check>load", "load>done"], edges);
+        Assert.Contains(diagram.Nodes, n => n.Pseudo == "start");
+        Assert.Contains(diagram.Nodes, n => n.Pseudo == "done");
+    }
+
+    [Fact]
+    public void DependenciesRunFromClientToSupplier()
+    {
+        var diagram = DiagramBuilder.Build(DiagramKind.Requirements, Fixture().Find("Sample")!);
+
+        Assert.Contains(diagram.Edges, e => e.Kind == RelationKind.Dependency
+            && e.Source.Element.Name == "MustStopToo" && e.Target.Element.Name == "MustStart");
     }
 }

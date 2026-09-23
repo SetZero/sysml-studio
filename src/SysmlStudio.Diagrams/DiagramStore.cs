@@ -73,7 +73,7 @@ public static class DiagramStore
     {
         var stored = new StoredDiagram { Kind = diagram.Kind, Root = diagram.Root.QualifiedName };
         foreach (var node in diagram.Nodes)
-            stored.Positions[node.Element.QualifiedName] = [node.X, node.Y];
+            stored.Positions[node.Key] = [node.X, node.Y];
         return stored;
     }
 
@@ -86,7 +86,7 @@ public static class DiagramStore
     {
         foreach (var node in diagram.Nodes)
         {
-            if (stored.Positions.TryGetValue(node.Element.QualifiedName, out var position) && position.Length == 2)
+            if (stored.Positions.TryGetValue(node.Key, out var position) && position.Length == 2)
             {
                 node.X = position[0];
                 node.Y = position[1];

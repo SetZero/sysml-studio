@@ -184,4 +184,38 @@ public sealed class WindowTests
         Assert.True(shell.IsDark);
         shell.IsDark = false;
     }
+
+    /// <summary>
+    /// The diagrams a real model offers have something in them. Runs against
+    /// SYSML_STUDIO_MODEL when it is set; the Ferrix model's names are used
+    /// when they are there and skipped when they are not.
+    /// </summary>
+    [AvaloniaFact]
+    public void RealModelDiagramsHaveContent()
+    {
+        if (Environment.GetEnvironmentVariable("SYSML_STUDIO_MODEL") is not { Length: > 0 } model || !Directory.Exists(model))
+            return;
+
+        var (window, shell) = Open(model);
+        foreach (var (kind, name) in new[]
+                 {
+                     (DiagramKind.Requirements, "FerrixRoadmap::stage13Isolation"),
+                     (DiagramKind.Requirements, "FerrixRoadmap"),
+                     (DiagramKind.ActionFlow, "FerrixBoot::LoaderSequence"),
+                     (DiagramKind.Definition, "FerrixStructure::Kernel"),
+                     (DiagramKind.Definition, "FerrixDrivers::DevMgr"),
+                 })
+        {
+            if (shell.Workspace!.Find(name) is not { } element)
+                continue;
+
+            shell.Select(element);
+            shell.OpenDiagramCommand.Execute(kind);
+            Settle();
+            Shoot(window, "real-" + name.Replace("::", "-", StringComparison.Ordinal) + "-" + kind);
+
+            var diagram = Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
+            Assert.NotEmpty(diagram.Nodes);
+        }
+    }
 }

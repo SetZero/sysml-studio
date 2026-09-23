@@ -64,11 +64,23 @@ public static class SvgExporter
           <marker id="open" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10" fill="none" stroke="#455A64"/>
           </marker>
+          <marker id="diamond" viewBox="0 0 14 8" refX="0" refY="4" markerWidth="14" markerHeight="8" orient="auto">
+            <path d="M 0 4 L 7 0 L 14 4 L 7 8 z" fill="#455A64"/>
+          </marker>
         </defs>
         """;
 
     private static string Node(DiagramNode node)
     {
+        if (node.IsPseudo)
+        {
+            var cx = N(node.X + (node.Width / 2));
+            var cy = N(node.Y + (node.Height / 2));
+            return node.Pseudo == "start"
+                ? string.Create(CultureInfo.InvariantCulture, $"""<circle cx="{cx}" cy="{cy}" r="9" fill="#455A64"/>""")
+                : string.Create(CultureInfo.InvariantCulture, $"""<g><circle cx="{cx}" cy="{cy}" r="11" fill="none" stroke="#455A64" stroke-width="1.5"/><circle cx="{cx}" cy="{cy}" r="6" fill="#455A64"/></g>""");
+        }
+
         var colour = Colour(node.Maturity);
         var svg = new StringBuilder();
         svg.Append(CultureInfo.InvariantCulture,
@@ -113,8 +125,9 @@ public static class SvgExporter
                 $"""<text x="{N(X)}" y="{N(Y - 4)}" fill="#546E7A" font-size="10" text-anchor="middle">{Escape(Shorten(text))}</text>""")
             : string.Empty;
 
+        var start = edge.Kind == RelationKind.Composition ? """ marker-start="url(#diamond)" """ : " ";
         return string.Create(CultureInfo.InvariantCulture,
-            $"""<path d="{path}" fill="none" stroke="#455A64"{dash}marker-end="url(#{marker})"/>{label}""");
+            $"""<path d="{path}" fill="none" stroke="#455A64"{dash}{start}marker-end="url(#{marker})"/>{label}""");
     }
 
     /// <summary>A hollow triangle for specialization, an open arrow for a trace, filled otherwise.</summary>
