@@ -83,6 +83,22 @@ public sealed class StudioDockFactory(
         return root;
     }
 
+    /// <summary>Puts <paramref name="replacement"/> where <paramref name="current"/> was, and shows it.</summary>
+    public void Replace(IDockable current, IDockable replacement)
+    {
+        var index = Documents.VisibleDockables?.IndexOf(current) ?? -1;
+        if (index < 0)
+        {
+            Show(replacement);
+            return;
+        }
+
+        InsertDockable(Documents, replacement, index);
+        SetActiveDockable(replacement);
+        SetFocusedDockable(Documents, replacement);
+        RemoveDockable(current, collapse: false);
+    }
+
     /// <summary>Shows a document, adding it first if it is not open yet.</summary>
     public void Show(IDockable document)
     {

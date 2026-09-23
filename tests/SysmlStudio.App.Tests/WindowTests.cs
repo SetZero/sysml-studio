@@ -255,4 +255,34 @@ public sealed class WindowTests
 
         Assert.NotEqual(before, during);
     }
+
+    /// <summary>Selecting another element redraws the diagram in front, in the same tab.</summary>
+    [AvaloniaFact]
+    public void TheDiagramFollowsTheSelection()
+    {
+        var (_, shell) = Open(Fixture);
+        var workspace = shell.Workspace!;
+
+        shell.Select(workspace.Find("Sample::Engine")!);
+        shell.OpenDiagramCommand.Execute(DiagramKind.Definition);
+        Settle();
+
+        // RollingThing is not on Engine's diagram: the tab is redrawn for it.
+        shell.Select(workspace.Find("Sample::RollingThing")!);
+        Settle();
+        var redrawn = Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
+        Assert.Equal("Sample::RollingThing", redrawn.Diagram.Root.QualifiedName);
+        Assert.Equal(DiagramKind.Definition, redrawn.Diagram.Kind);
+
+        // Wheel is on RollingThing's diagram (it specializes it): selected there, not redrawn.
+        shell.Select(workspace.Find("Sample::Wheel")!);
+        Settle();
+        Assert.Same(redrawn, shell.ActiveDocument);
+        Assert.True(redrawn.Nodes.Single(n => n.Element.Name == "Wheel").IsSelected);
+
+        // A requirement cannot be drawn as a definition diagram: it gets its own kind.
+        shell.Select(workspace.Find("Sample::MustStart")!);
+        Settle();
+        Assert.Equal(DiagramKind.Requirements, Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument).Diagram.Kind);
+    }
 }

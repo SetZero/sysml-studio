@@ -52,8 +52,13 @@ public static class DiagramBuilder
             kinds.Add(DiagramKind.Interconnection);
         }
 
-        if (element.IsDefinition || IsTypedUsage(element))
+        // A requirement or a case is read through its trace links; a block
+        // diagram of one says nothing the requirements diagram does not.
+        if ((element.IsDefinition || IsTypedUsage(element))
+            && !RequirementKinds.Contains(element.Kind) && !CaseKinds.Contains(element.Kind))
+        {
             kinds.Add(DiagramKind.Definition);
+        }
 
         return kinds;
     }

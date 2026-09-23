@@ -22,6 +22,7 @@ public sealed partial class DiagramNodeViewModel(DiagramNode node) : ObservableO
 
     public Element Element => _node.Element;
     public string Title => _node.Label;
+    public bool IsPseudoNode => _node.IsPseudo;
 
     /// <summary>The element's kind in capitals, as the node's header shows it: "PART DEF".</summary>
     public string KindCaption => _node.Element.Kind.ToUpperInvariant();

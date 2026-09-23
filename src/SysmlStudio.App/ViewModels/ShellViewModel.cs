@@ -207,12 +207,51 @@ public sealed partial class ShellViewModel : ObservableObject
         Browser.Reveal(element);
         SelectedElement = element;
         Properties.Element = element;
+        FollowSelection(element);
     }
 
     private void OnBrowserSelection(Element? element)
     {
         SelectedElement = element;
         Properties.Element = element;
+        if (element is not null)
+            FollowSelection(element);
+    }
+
+    /// <summary>
+    /// The diagram in front follows the selection, as Enterprise Architect's
+    /// does. An element already on it is selected there; any other element is
+    /// drawn in the same tab — as the same kind of diagram when it can be, as
+    /// its first kind otherwise — so browsing does not leave a trail of tabs.
+    /// An element no diagram can be drawn of leaves the canvas as it is.
+    /// </summary>
+    private void FollowSelection(Element element)
+    {
+        if (ActiveDiagram is not { } current)
+            return;
+
+        if (current.Nodes.FirstOrDefault(n => ReferenceEquals(n.Element, element) && !n.IsPseudoNode) is { } onCanvas)
+        {
+            foreach (var node in current.Nodes)
+                node.IsSelected = ReferenceEquals(node, onCanvas);
+            return;
+        }
+
+        var kinds = DiagramBuilder.KindsFor(element);
+        if (kinds.Count == 0)
+            return;
+
+        var kind = kinds.Contains(current.Diagram.Kind) ? current.Diagram.Kind : kinds[0];
+        var id = $"diagram:{kind}:{element.QualifiedName}";
+        var open = _factory.Documents.VisibleDockables?.FirstOrDefault(d => d.Id == id);
+        if (open is not null)
+        {
+            _factory.Show(open);
+            return;
+        }
+
+        var replacement = new DiagramDocumentViewModel(DiagramBuilder.Build(kind, element));
+        _factory.Replace(current, replacement);
     }
 
     private void OnDockActiveChanged(IDockable? dockable)
