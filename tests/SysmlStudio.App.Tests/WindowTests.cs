@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using SysmlStudio.App.ViewModels;
 using SysmlStudio.App.Views;
 using SysmlStudio.Diagrams;
@@ -217,5 +218,41 @@ public sealed class WindowTests
             var diagram = Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
             Assert.NotEmpty(diagram.Nodes);
         }
+    }
+
+    /// <summary>
+    /// While a box is dragged its arrows follow it, before the mouse is
+    /// released, not only after the drop.
+    /// </summary>
+    [AvaloniaFact]
+    public void ArrowsFollowABoxWhileItIsDragged()
+    {
+        var (window, shell) = Open(Fixture);
+        shell.Select(shell.Workspace!.Find("Sample::Vehicle")!);
+        shell.OpenDiagramCommand.Execute(DiagramKind.Interconnection);
+        Settle();
+
+        var diagram = Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
+        var connection = Assert.Single(diagram.Connections);
+        var container = window.GetVisualDescendants().OfType<Nodify.Avalonia.ItemContainer>()
+            .First(c => ReferenceEquals(c.DataContext, connection.Source));
+
+        var grab = container.TranslatePoint(new Point(container.Bounds.Width / 2, 12), window)!.Value;
+        var before = connection.SourceAnchor;
+
+        window.MouseMove(grab);
+        window.MouseDown(grab, Avalonia.Input.MouseButton.Left);
+        for (var step = 1; step <= 10; step++)
+        {
+            window.MouseMove(grab + new Point(step * 12, step * 8), Avalonia.Input.RawInputModifiers.LeftMouseButton);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Settle();
+        var during = connection.SourceAnchor;
+        window.MouseUp(grab + new Point(120, 80), Avalonia.Input.MouseButton.Left);
+        Settle();
+
+        Assert.NotEqual(before, during);
     }
 }

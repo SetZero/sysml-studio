@@ -9,6 +9,15 @@ namespace SysmlStudio.App.Views;
 /// <summary>A diagram: toolbox, canvas, breadcrumb and zoom. The canvas is Nodify's.</summary>
 public sealed partial class DiagramDocumentView : UserControl
 {
+    static DiagramDocumentView()
+    {
+        // Nodify's drag optimisation moves a preview during a drag and writes
+        // Location only on release, so the arrows, which follow Location,
+        // jumped after the drop instead of following the box. Diagrams here
+        // are small enough to move the real thing.
+        NodifyEditor.EnableDraggingContainersOptimizations = false;
+    }
+
     public DiagramDocumentView()
     {
         InitializeComponent();
