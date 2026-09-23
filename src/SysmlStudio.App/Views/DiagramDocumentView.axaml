@@ -147,6 +147,7 @@
     </nodify:NodifyEditor>
 
     <!-- The toolbar: pointer, what can be added or drawn here, auto-layout -->
+    <Panel Margin="{Binding $parent[Window].((vm:ShellViewModel)DataContext).CanvasInsets}">
     <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18"
             Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1" Padding="4" BoxShadow="0 2 10 0 #18000000">
@@ -182,5 +183,6 @@
             Command="{Binding FitCommand}" ToolTip.Tip="Fit to view (Ctrl+0)">
       <TextBlock Text="{Binding ZoomText}" Classes="mono faint" FontSize="12" />
     </Button>
+    </Panel>
   </Panel>
 </UserControl>

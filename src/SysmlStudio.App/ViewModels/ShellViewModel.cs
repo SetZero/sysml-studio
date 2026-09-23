@@ -100,6 +100,18 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public ObservableCollection<DiagramKindOption> DiagramKinds { get; }
 
+    /// <summary>The width of the model panel that floats over the left of the documents.</summary>
+    public static double SideWidth => 232;
+
+    /// <summary>The width of the inspector that floats over the right of the documents.</summary>
+    public static double InspectorWidth => 272;
+
+    /// <summary>
+    /// How much of the document area the floating side panels cover. The
+    /// canvas runs on underneath them; tabs, panels and controls keep clear.
+    /// </summary>
+    public Thickness CanvasInsets => HasWorkspace ? new Thickness(SideWidth, 0, InspectorWidth, 0) : default;
+
     /// <summary>The diagram switcher shows over diagrams, and over an empty centre with something selected.</summary>
     public bool ShowsKinds => HasWorkspace && ActiveSource is null;
 
@@ -225,6 +237,7 @@ public sealed partial class ShellViewModel : ObservableObject
             ShowDocument(CreateDiagram(diagram, laidOut: true));
 
         OnPropertyChanged(nameof(HasWorkspace));
+        OnPropertyChanged(nameof(CanvasInsets));
         OnPropertyChanged(nameof(ShowsKinds));
         OnDocumentsChanged();
         RefreshDiagramKinds();

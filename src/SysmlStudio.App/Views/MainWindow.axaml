@@ -112,7 +112,7 @@
     </Border>
 
     <!-- ===== Body ===== -->
-    <Grid Grid.Row="1" ColumnDefinitions="48,Auto,*,Auto">
+    <Grid Grid.Row="1" ColumnDefinitions="48,*">
 
       <!-- Activity bar -->
       <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}"
@@ -137,45 +137,15 @@
         </StackPanel>
       </Border>
 
-      <!-- Model / search panel -->
-      <Border Grid.Column="1" Width="232" Background="{DynamicResource SurfaceBrush}"
-              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0"
-              IsVisible="{Binding HasWorkspace}">
-        <Panel>
-          <views:ProjectBrowserView DataContext="{Binding Browser}" IsVisible="{Binding $parent[Window].((vm:ShellViewModel)DataContext).ShowsModel}" />
-
-          <DockPanel IsVisible="{Binding ShowsSearch}">
-            <StackPanel DockPanel.Dock="Top" Margin="14,14,14,8" Spacing="10">
-              <TextBlock Text="SEARCH" Classes="caption" />
-              <TextBox Classes="field" Text="{Binding SearchText}" PlaceholderText="Name or qualified name" FontSize="13.5" MinHeight="32" />
-            </StackPanel>
-            <ScrollViewer>
-              <ItemsControl ItemsSource="{Binding SearchResults}" Margin="6,0">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="model:Element">
-                    <Button Classes="flat row" Padding="8,5"
-                            Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).RevealCommand}"
-                            CommandParameter="{Binding}">
-                      <StackPanel Spacing="1">
-                        <TextBlock Text="{Binding DisplayName}" FontSize="14" Foreground="{DynamicResource TextBrush}" />
-                        <TextBlock Text="{Binding QualifiedName}" Classes="mono faint" FontSize="11" TextTrimming="CharacterEllipsis" />
-                      </StackPanel>
-                    </Button>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </ScrollViewer>
-          </DockPanel>
-        </Panel>
-      </Border>
-
+      <!-- The documents fill the whole width; the side panels float over them as frosted glass. -->
+      <Panel Grid.Column="1">
       <!-- Documents and the panel under them -->
-      <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto" Background="{DynamicResource CanvasBrush}">
+      <Grid x:Name="Stage" RowDefinitions="Auto,*,Auto" Background="{DynamicResource CanvasBrush}">
 
         <!-- Tab strip -->
         <Border Grid.Row="0" Height="37" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
-                IsVisible="{Binding HasDocuments}">
+                Margin="{Binding CanvasInsets}" IsVisible="{Binding HasDocuments}">
           <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
             <ItemsControl ItemsSource="{Binding Documents}">
               <ItemsControl.ItemsPanel>
@@ -214,7 +184,7 @@
 
         <!-- A model with nothing drawn yet -->
         <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6"
-                    IsVisible="{Binding ShowsHint}">
+                    Margin="{Binding CanvasInsets}" IsVisible="{Binding ShowsHint}">
           <TextBlock Text="Nothing drawn yet" FontSize="18" HorizontalAlignment="Center" />
           <TextBlock Text="Pick an element in the model, then a diagram kind above." Classes="muted" FontSize="14" />
         </StackPanel>
@@ -225,15 +195,53 @@
 
         <!-- Problems and usages -->
         <views:BottomPanelView Grid.Row="2" DataContext="{Binding Bottom}" Height="232"
+                               Margin="{Binding $parent[Window].((vm:ShellViewModel)DataContext).CanvasInsets}"
                                IsVisible="{Binding IsOpen}" />
       </Grid>
 
+      <!-- Model / search panel -->
+      <views:FrostPanel Width="{x:Static vm:ShellViewModel.SideWidth}" HorizontalAlignment="Left"
+                        Source="{Binding #Stage}" Tint="{DynamicResource GlassBrush}"
+                        IsVisible="{Binding HasWorkspace}">
+        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+        <Panel>
+          <views:ProjectBrowserView DataContext="{Binding Browser}" IsVisible="{Binding $parent[Window].((vm:ShellViewModel)DataContext).ShowsModel}" />
+
+          <DockPanel IsVisible="{Binding ShowsSearch}">
+            <StackPanel DockPanel.Dock="Top" Margin="14,14,14,8" Spacing="10">
+              <TextBlock Text="SEARCH" Classes="caption" />
+              <TextBox Classes="field" Text="{Binding SearchText}" PlaceholderText="Name or qualified name" FontSize="13.5" MinHeight="32" />
+            </StackPanel>
+            <ScrollViewer>
+              <ItemsControl ItemsSource="{Binding SearchResults}" Margin="6,0">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="model:Element">
+                    <Button Classes="flat row" Padding="8,5"
+                            Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).RevealCommand}"
+                            CommandParameter="{Binding}">
+                      <StackPanel Spacing="1">
+                        <TextBlock Text="{Binding DisplayName}" FontSize="14" Foreground="{DynamicResource TextBrush}" />
+                        <TextBlock Text="{Binding QualifiedName}" Classes="mono faint" FontSize="11" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </Panel>
+        </Border>
+      </views:FrostPanel>
+
       <!-- Inspector -->
-      <Border Grid.Column="3" Width="272" Background="{DynamicResource SurfaceBrush}"
-              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
-              IsVisible="{Binding HasWorkspace}">
-        <views:PropertiesView DataContext="{Binding Properties}" />
-      </Border>
+      <views:FrostPanel Width="{x:Static vm:ShellViewModel.InspectorWidth}" HorizontalAlignment="Right"
+                        Source="{Binding #Stage}" Tint="{DynamicResource GlassBrush}"
+                        IsVisible="{Binding HasWorkspace}">
+        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0">
+          <views:PropertiesView DataContext="{Binding Properties}" />
+        </Border>
+      </views:FrostPanel>
+      </Panel>
     </Grid>
 
     <!-- ===== Status bar ===== -->

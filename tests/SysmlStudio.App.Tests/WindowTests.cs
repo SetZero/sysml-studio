@@ -389,4 +389,68 @@ public sealed class WindowTests
         Settle();
         Assert.Null(shell.Dialog);
     }
+
+    /// <summary>
+    /// The side panels are glass over the canvas: a box panned under the model
+    /// panel shows through it, blurred, instead of being hidden.
+    /// </summary>
+    [AvaloniaFact]
+    public void TheSidePanelsShowTheCanvasThroughFrostedGlass()
+    {
+        var (window, shell) = Open(Fixture);
+        shell.Select(shell.Workspace!.Find("Sample")!);
+        shell.OpenDiagramCommand.Execute(DiagramKind.Definition);
+        Settle();
+
+        var editor = window.GetVisualDescendants().OfType<Nodify.Avalonia.NodifyEditor>().Single();
+        var glass = window.GetVisualDescendants().OfType<FrostPanel>().First(p => p.HorizontalAlignment == Avalonia.Layout.HorizontalAlignment.Left);
+        using var before = window.CaptureRenderedFrame();
+
+        // Drag the empty canvas to the left, so the diagram slides under the model panel.
+        var start = new Point(1200, 800);
+        var viewport = editor.ViewportLocation;
+        window.MouseMove(start);
+        window.MouseDown(start, Avalonia.Input.MouseButton.Right);
+        for (var step = 1; step <= 14; step++)
+        {
+            window.MouseMove(start - new Point(step * 30, 0), Avalonia.Input.RawInputModifiers.RightMouseButton);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        window.MouseUp(start - new Point(420, 0), Avalonia.Input.MouseButton.Right);
+        Settle();
+        Assert.NotEqual(viewport, editor.ViewportLocation);
+        Shoot(window, "frosted");
+        using var after = window.CaptureRenderedFrame();
+
+        Assert.NotNull(before);
+        Assert.NotNull(after);
+        var region = glass.Bounds.Translate((Vector)glass.TranslatePoint(default, window)!.Value);
+        Assert.NotEqual(Pixels(before!, region), Pixels(after!, region)); // what moved underneath shows through
+    }
+
+    /// <summary>The sum of the colour values in a region of a rendered frame.</summary>
+    private static long Pixels(Avalonia.Media.Imaging.Bitmap frame, Rect region)
+    {
+        var width = frame.PixelSize.Width;
+        var buffer = new byte[width * frame.PixelSize.Height * 4];
+        var handle = System.Runtime.InteropServices.GCHandle.Alloc(buffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+        try
+        {
+            frame.CopyPixels(new PixelRect(frame.PixelSize), handle.AddrOfPinnedObject(), buffer.Length, width * 4);
+        }
+        finally
+        {
+            handle.Free();
+        }
+
+        long sum = 0;
+        for (var y = (int)region.Top; y < (int)region.Bottom; y += 2)
+        {
+            for (var x = (int)region.Left; x < (int)region.Right; x += 2)
+                sum += buffer[((y * width) + x) * 4] + buffer[(((y * width) + x) * 4) + 1];
+        }
+
+        return sum;
+    }
 }

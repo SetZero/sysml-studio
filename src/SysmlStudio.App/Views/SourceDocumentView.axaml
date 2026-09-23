@@ -5,6 +5,7 @@
              x:Class="SysmlStudio.App.Views.SourceDocumentView"
              x:DataType="vm:SourceDocumentViewModel">
   <edit:TextEditor x:Name="Editor"
+                   Margin="{Binding $parent[Window].((vm:ShellViewModel)DataContext).CanvasInsets}"
                    Document="{Binding Text}"
                    ShowLineNumbers="True"
                    WordWrap="True"

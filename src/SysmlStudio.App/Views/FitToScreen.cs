@@ -1,6 +1,8 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Threading;
 using Nodify.Avalonia;
+using SysmlStudio.App.ViewModels;
 
 namespace SysmlStudio.App.Views;
 
@@ -42,15 +44,18 @@ public static class FitToScreen
         var extent = editor.ItemsExtent;
         if (extent.Width > 0 && extent.Height > 0 && editor.Bounds.Width > 0)
         {
-            // Padded, so nothing lands under the floating toolbar or the zoom figure.
-            editor.FitToScreen(extent.Inflate(new Thickness(56, 48, 56, 96)));
+            // The side panels float over the canvas: the diagram is framed in
+            // what they leave clear, padded so nothing lands under the floating
+            // toolbar or the zoom figure either.
+            var insets = (TopLevel.GetTopLevel(editor)?.DataContext as ShellViewModel)?.CanvasInsets ?? default;
+            editor.FitToScreen(extent.Inflate(new Thickness(56 + insets.Left, 48, 56 + insets.Right, 96)));
 
             // A small diagram fitted to a big canvas would be drawn at 300 per cent.
             // Nothing is shown larger than life: it is centred at 100 instead.
             if (editor.ViewportZoom > 1)
             {
                 editor.ViewportZoom = 1;
-                editor.BringIntoView(extent.Center);
+                editor.BringIntoView(extent.Center + new Vector((insets.Right - insets.Left) / 2, 0));
             }
 
             return;

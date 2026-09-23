@@ -12,6 +12,8 @@
       <!-- Chrome: title bar, side panels, inspector, status bar. -->
       <SolidColorBrush x:Key="WorkbenchBrush" Color="#F4F4F4" />
       <SolidColorBrush x:Key="SurfaceBrush" Color="#F4F4F4" />
+      <!-- The frosting on the side panels that float over the canvas. -->
+      <SolidColorBrush x:Key="GlassBrush" Color="#80F4F4F4" />
       <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#FFFFFF" />
       <SolidColorBrush x:Key="HeaderBrush" Color="#F7F7F7" />
       <!-- The canvas and the editor: a shade lighter than the chrome. -->
@@ -57,6 +59,7 @@
     <ResourceDictionary x:Key="Dark">
       <SolidColorBrush x:Key="WorkbenchBrush" Color="#1E2023" />
       <SolidColorBrush x:Key="SurfaceBrush" Color="#1E2023" />
+      <SolidColorBrush x:Key="GlassBrush" Color="#8C1E2023" />
       <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#2A2D31" />
       <SolidColorBrush x:Key="HeaderBrush" Color="#212327" />
       <SolidColorBrush x:Key="CanvasBrush" Color="#18191C" />
