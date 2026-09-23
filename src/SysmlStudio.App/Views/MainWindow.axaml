@@ -20,11 +20,15 @@
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
         <MenuItem Header="_Open Folder…" Click="OnOpenFolder" />
+        <MenuItem Header="_Save Layout" Command="{Binding SaveLayoutCommand}" />
         <Separator />
         <MenuItem Header="E_xit" Click="OnExit" />
       </MenuItem>
       <MenuItem Header="_Diagram">
         <MenuItem Header="_Relayout" Command="{Binding RelayoutCommand}" />
+        <Separator />
+        <MenuItem Header="Export as _SVG…" Click="OnExportSvg" />
+        <MenuItem Header="Export as _PNG…" Click="OnExportPng" />
       </MenuItem>
     </Menu>
 

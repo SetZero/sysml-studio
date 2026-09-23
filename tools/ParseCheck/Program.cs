@@ -44,4 +44,20 @@ foreach (var element in workspace.Elements)
     }
 }
 
+if (args.Length > 2)
+{
+    // ParseCheck <folder> <qualified name> <kind> <out.svg>: render one diagram.
+    var root = workspace.Find(args[1]);
+    if (root is null)
+    {
+        Console.WriteLine($"no element named {args[1]}");
+        return 1;
+    }
+
+    var one = DiagramBuilder.Build(Enum.Parse<DiagramKind>(args[2]), root);
+    DiagramLayout.Apply(one);
+    SvgExporter.Write(one, args[3]);
+    Console.WriteLine($"wrote {args[3]}: {one.Nodes.Count} nodes, {one.Edges.Count} edges");
+}
+
 return workspace.Errors.Count == 0 ? 0 : 1;

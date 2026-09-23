@@ -89,10 +89,11 @@ public sealed class DiagramConnectionViewModel : ObservableObject, IDisposable
 /// <summary>A diagram open in a tab.</summary>
 public sealed class DiagramDocumentViewModel : ObservableObject
 {
-    public DiagramDocumentViewModel(Diagram diagram)
+    public DiagramDocumentViewModel(Diagram diagram, bool laidOut = false)
     {
         Diagram = diagram;
-        DiagramLayout.Apply(diagram);
+        if (!laidOut)
+            DiagramLayout.Apply(diagram);
 
         var nodes = diagram.Nodes.ConvertAll(n => new DiagramNodeViewModel(n));
         Nodes = new ObservableCollection<DiagramNodeViewModel>(nodes);
@@ -109,6 +110,19 @@ public sealed class DiagramDocumentViewModel : ObservableObject
     public string Title => Diagram.Title;
     public ObservableCollection<DiagramNodeViewModel> Nodes { get; }
     public ObservableCollection<DiagramConnectionViewModel> Connections { get; }
+
+    /// <summary>Copies wherever the nodes were dragged to back into the diagram.</summary>
+    public void PushPositions()
+    {
+        foreach (var node in Nodes)
+        {
+            if (Diagram.NodeFor(node.Element) is { } target)
+            {
+                target.X = node.Location.X;
+                target.Y = node.Location.Y;
+            }
+        }
+    }
 
     /// <summary>Lays the diagram out again, discarding wherever nodes were dragged to.</summary>
     public void Relayout()

@@ -72,8 +72,46 @@ public sealed partial class MainViewModel : ObservableObject
         foreach (var unresolved in Workspace.UnresolvedReferences)
             Problems.Add(unresolved);
 
+        // Whatever was open last time, where it was left.
+        Documents.Clear();
+        foreach (var diagram in DiagramStore.Reopen(DiagramStore.Load(folder), Workspace))
+            Documents.Add(new DiagramDocumentViewModel(diagram, laidOut: true));
+        SelectedDocument = Documents.FirstOrDefault();
+
         Status = $"{Workspace.Files.Count} files, {Workspace.Elements.Count()} elements, "
             + $"{Workspace.Errors.Count} syntax errors, {Workspace.UnresolvedReferences.Count} unresolved references";
+    }
+
+    /// <summary>
+    /// Writes the sidecar: which diagrams are open and where their nodes sit.
+    /// Nothing about this goes into the .sysml files.
+    /// </summary>
+    [RelayCommand]
+    public void SaveLayout()
+    {
+        if (Folder.Length == 0)
+            return;
+
+        var stored = new StoredDiagrams();
+        foreach (var document in Documents)
+        {
+            document.PushPositions();
+            stored.Diagrams.Add(DiagramStore.Capture(document.Diagram));
+        }
+
+        DiagramStore.Save(Folder, stored);
+        Status = $"Layout saved to {DiagramStore.PathFor(Folder)}";
+    }
+
+    /// <summary>Writes the open diagram as SVG.</summary>
+    public void ExportSvg(string path)
+    {
+        if (SelectedDocument is not { } document)
+            return;
+
+        document.PushPositions();
+        SvgExporter.Write(document.Diagram, path);
+        Status = $"Exported {path}";
     }
 
     [RelayCommand]
