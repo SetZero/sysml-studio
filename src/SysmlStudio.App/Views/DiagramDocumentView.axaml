@@ -3,42 +3,37 @@
              xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
              xmlns:views="clr-namespace:SysmlStudio.App.Views"
              xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
-             xmlns:nodifyc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
              x:Class="SysmlStudio.App.Views.DiagramDocumentView"
              x:DataType="vm:DiagramDocumentViewModel">
 
   <UserControl.Styles>
-    <!-- Relations drawn UML's way: straight, cut back at the node's border;
-         a hollow triangle for specialization, a dashed line with an open
-         head for the trace relations, a filled head for the rest. -->
-    <Style Selector="nodifyc|LineConnection">
+    <!-- Relations drawn UML's way, along the route MSAGL found around the
+         boxes: a hollow triangle for specialization, a filled diamond at the
+         owner for composition, a dashed line and open head for the trace
+         relations, a filled head for the rest. -->
+    <Style Selector="Path.edge">
       <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
-      <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
       <Setter Property="StrokeThickness" Value="1.3" />
-      <Setter Property="ArrowEnds" Value="End" />
-      <Setter Property="ArrowShape" Value="Arrowhead" />
-      <Setter Property="ArrowSize" Value="9,7" />
-      <Setter Property="SourceOffsetMode" Value="Rectangle" />
-      <Setter Property="TargetOffsetMode" Value="Rectangle" />
-      <Setter Property="Spacing" Value="0" />
-      <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
-      <Setter Property="FontSize" Value="11" />
-      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-      <Setter Property="TextBackground" Value="Transparent" />
-      <Setter Property="OutlineBrush" Value="Transparent" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
     </Style>
-    <Style Selector="nodifyc|LineConnection.generalization">
-      <Setter Property="Fill" Value="{DynamicResource CanvasBrush}" />
-      <Setter Property="ArrowSize" Value="13,11" />
-    </Style>
-    <Style Selector="nodifyc|LineConnection.composition">
-      <Setter Property="ArrowEnds" Value="Both" />
-      <Setter Property="ArrowShape" Value="Rectangle" />
-      <Setter Property="ArrowSize" Value="7,7" />
-    </Style>
-    <Style Selector="nodifyc|LineConnection.trace">
+    <Style Selector="Path.edge.dashed">
       <Setter Property="StrokeDashArray" Value="5,4" />
+    </Style>
+    <Style Selector="Path.head">
+      <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
+      <Setter Property="StrokeThickness" Value="1.3" />
+      <Setter Property="StrokeJoin" Value="Miter" />
+      <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
+    </Style>
+    <Style Selector="Path.head.hollow">
+      <Setter Property="Fill" Value="{DynamicResource CanvasBrush}" />
+    </Style>
+    <Style Selector="Path.head.open">
       <Setter Property="Fill" Value="Transparent" />
+    </Style>
+    <Style Selector="Path.tail">
+      <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
     </Style>
   </UserControl.Styles>
 
@@ -69,7 +64,6 @@
                            Connections="{Binding Connections}"
                            ViewportZoom="{Binding Zoom, Mode=TwoWay}"
                            GridCellSize="8"
-                           Decorators="{Binding Labels}"
                            ItemsDragCompletedCommand="{Binding DragCompletedCommand}"
                            Background="Transparent"
                            views:FitToScreen.OnShow="True">
@@ -127,30 +121,21 @@
           </DataTemplate>
         </nodify:NodifyEditor.ItemTemplate>
 
-        <nodify:NodifyEditor.DecoratorContainerTheme>
-          <ControlTheme TargetType="nodify:DecoratorContainer"
-                        BasedOn="{StaticResource {x:Type nodify:DecoratorContainer}}"
-                        x:DataType="vm:DiagramConnectionViewModel">
-            <Setter Property="Location" Value="{Binding LabelLocation}" />
-          </ControlTheme>
-        </nodify:NodifyEditor.DecoratorContainerTheme>
-
-        <nodify:NodifyEditor.DecoratorTemplate>
-          <DataTemplate x:DataType="vm:DiagramConnectionViewModel">
-            <TextBlock Text="{Binding Label}" Classes="mono muted" FontSize="11" IsHitTestVisible="False" />
-          </DataTemplate>
-        </nodify:NodifyEditor.DecoratorTemplate>
 
         <nodify:NodifyEditor.ConnectionTemplate>
           <DataTemplate x:DataType="vm:DiagramConnectionViewModel">
-            <nodifyc:LineConnection Source="{Binding SourceAnchor}"
-                                    Target="{Binding TargetAnchor}"
-                                    SourceOffset="{Binding Source.HalfSize}"
-                                    TargetOffset="{Binding Target.HalfSize}"
-                                    Classes.generalization="{Binding IsGeneralization}"
-                                    Classes.composition="{Binding IsComposition}"
-                                    Classes.trace="{Binding IsDashed}"
-                                    ToolTip.Tip="{Binding Description}" />
+            <Panel ToolTip.Tip="{Binding Description}" Background="Transparent">
+              <Path Classes="edge" Classes.dashed="{Binding IsDashed}" Data="{Binding Line}" />
+              <Path Classes="head" Classes.hollow="{Binding IsGeneralization}" Classes.open="{Binding IsOpenHead}"
+                    Data="{Binding Head}" />
+              <Path Classes="tail" Data="{Binding Tail}" />
+              <!-- The label lives in the connection's own layer, so it scales
+                   with the diagram and sits where MSAGL placed it. -->
+              <Canvas IsVisible="{Binding ShowsLabel}" IsHitTestVisible="False">
+                <TextBlock Canvas.Left="{Binding LabelLocation.X}" Canvas.Top="{Binding LabelLocation.Y}"
+                           Text="{Binding Label}" Classes="mono muted" FontSize="11" />
+              </Canvas>
+            </Panel>
           </DataTemplate>
         </nodify:NodifyEditor.ConnectionTemplate>
       </nodify:NodifyEditor>

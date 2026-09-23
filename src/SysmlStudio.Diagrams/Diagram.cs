@@ -64,8 +64,11 @@ public sealed class DiagramEdge(DiagramNode source, DiagramNode target, Relation
     public RelationKind Kind { get; } = kind;
     public string? Label { get; } = label;
 
-    /// <summary>The route MSAGL found, in the same coordinates as the nodes.</summary>
+    /// <summary>The route MSAGL found around the boxes, in the same coordinates as the nodes.</summary>
     public List<(double X, double Y)> Waypoints { get; } = [];
+
+    /// <summary>Where MSAGL put the label's centre, clear of boxes and other labels; null without a route.</summary>
+    public (double X, double Y)? LabelCentre { get; set; }
 
     public override string ToString() => $"{Source} -{Kind}-> {Target}";
 }

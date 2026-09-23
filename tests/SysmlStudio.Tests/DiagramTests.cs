@@ -169,4 +169,43 @@ public sealed class DiagramTests
         Assert.Contains(diagram.Edges, e => e.Kind == RelationKind.Dependency
             && e.Source.Element.Name == "MustStopToo" && e.Target.Element.Name == "MustStart");
     }
+
+    [Fact]
+    public void NoEdgeRunsThroughABoxItDoesNotConnect()
+    {
+        var diagram = DiagramBuilder.Build(DiagramKind.Definition, Fixture().Find("Sample")!);
+        DiagramLayout.Apply(diagram);
+
+        foreach (var edge in diagram.Edges)
+        {
+            Assert.NotEmpty(edge.Waypoints);
+            foreach (var box in diagram.Nodes.Where(n => !ReferenceEquals(n, edge.Source) && !ReferenceEquals(n, edge.Target)))
+            {
+                var inside = edge.Waypoints.Any(p => p.X > box.X + 2 && p.X < box.X + box.Width - 2
+                                                  && p.Y > box.Y + 2 && p.Y < box.Y + box.Height - 2);
+                Assert.False(inside, $"{edge} runs through {box.Label}");
+            }
+        }
+    }
+
+    [Fact]
+    public void BoxesThatGrewAfterPlacementArePushedApart()
+    {
+        var diagram = DiagramBuilder.Build(DiagramKind.Definition, Fixture().Find("Sample")!);
+        DiagramLayout.Apply(diagram);
+
+        // As if the canvas had drawn every box three times taller than estimated.
+        foreach (var node in diagram.Nodes)
+            node.Height *= 3;
+        DiagramLayout.RemoveOverlaps(diagram);
+
+        foreach (var a in diagram.Nodes)
+        {
+            foreach (var b in diagram.Nodes.Where(o => !ReferenceEquals(o, a)))
+            {
+                var apart = a.X + a.Width <= b.X || b.X + b.Width <= a.X || a.Y + a.Height <= b.Y || b.Y + b.Height <= a.Y;
+                Assert.True(apart, $"'{a.Label}' overlaps '{b.Label}'");
+            }
+        }
+    }
 }

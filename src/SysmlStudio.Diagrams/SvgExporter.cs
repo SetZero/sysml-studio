@@ -119,7 +119,7 @@ public static class SvgExporter
 
         var dash = IsDashed(edge.Kind) ? """ stroke-dasharray="6 4" """ : " ";
         var marker = Marker(edge.Kind);
-        var (X, Y) = points[points.Count / 2];
+        var (X, Y) = edge.LabelCentre is { } placed ? (placed.X, placed.Y + 4) : points[points.Count / 2];
         var label = edge.Label is { Length: > 0 } text
             ? string.Create(CultureInfo.InvariantCulture,
                 $"""<text x="{N(X)}" y="{N(Y - 4)}" fill="#546E7A" font-size="10" text-anchor="middle">{Escape(Shorten(text))}</text>""")

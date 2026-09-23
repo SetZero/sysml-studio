@@ -205,6 +205,7 @@ public sealed class WindowTests
                      (DiagramKind.ActionFlow, "FerrixBoot::LoaderSequence"),
                      (DiagramKind.Definition, "FerrixStructure::Kernel"),
                      (DiagramKind.Definition, "FerrixDrivers::DevMgr"),
+                     (DiagramKind.Definition, "FerrixBoot"),
                  })
         {
             if (shell.Workspace!.Find(name) is not { } element)
@@ -238,7 +239,8 @@ public sealed class WindowTests
             .First(c => ReferenceEquals(c.DataContext, connection.Source));
 
         var grab = container.TranslatePoint(new Point(container.Bounds.Width / 2, 12), window)!.Value;
-        var before = connection.SourceAnchor;
+        var before = connection.Source.Anchor;
+        var lineBefore = connection.Line.Bounds;
 
         window.MouseMove(grab);
         window.MouseDown(grab, Avalonia.Input.MouseButton.Left);
@@ -249,11 +251,13 @@ public sealed class WindowTests
         }
 
         Settle();
-        var during = connection.SourceAnchor;
+        var during = connection.Source.Anchor;
+        var lineDuring = connection.Line.Bounds;
         window.MouseUp(grab + new Point(120, 80), Avalonia.Input.MouseButton.Left);
         Settle();
 
         Assert.NotEqual(before, during);
+        Assert.NotEqual(lineBefore, lineDuring); // the drawn line followed, before the drop
     }
 
     /// <summary>Selecting another element redraws the diagram in front, in the same tab.</summary>
