@@ -35,12 +35,12 @@ public static class ElementMenu
 
         items.Add(new Separator());
         if (element.Name is not null)
-            items.Add(Item("Rename…", () => shell.RenameCommand.Execute(element), "F2"));
+            items.Add(Item("Rename…", () => shell.RenameCommand.Execute(element), shell.Keys.KeyGesture("rename")));
         if (!element.IsDefinition && ModelEditor.IsTyped(element.Kind))
-            items.Add(Item("Set type…", () => shell.SetTypeCommand.Execute(element)));
+            items.Add(Item("Set type…", () => shell.SetTypeCommand.Execute(element), shell.Keys.KeyGesture("setType")));
         if (element.IsDefinition)
-            items.Add(Item("Specializes…", () => shell.SpecializeCommand.Execute(element)));
-        items.Add(Item("Doc comment…", () => shell.EditDocCommand.Execute(element)));
+            items.Add(Item("Specializes…", () => shell.SpecializeCommand.Execute(element), shell.Keys.KeyGesture("specialize")));
+        items.Add(Item("Doc comment…", () => shell.EditDocCommand.Execute(element), shell.Keys.KeyGesture("description")));
 
         if (shell.MaturityKeywords.Count > 0)
         {
@@ -58,19 +58,19 @@ public static class ElementMenu
         }
 
         if (element.Kind is not ("package" or "library package"))
-            items.Add(Item("Satisfies a requirement…", () => shell.AddSatisfyCommand.Execute(element)));
+            items.Add(Item("Satisfies a requirement…", () => shell.AddSatisfyCommand.Execute(element), shell.Keys.KeyGesture("satisfy")));
 
         items.Add(new Separator());
         items.Add(Item("Find usages", () =>
         {
             shell.Select(element);
             shell.FindUsagesCommand.Execute(null);
-        }, "Shift+F12"));
+        }, shell.Keys.KeyGesture("findUsages")));
         if (element.File is { } file)
-            items.Add(Item("Go to source", () => shell.OpenSource(file.Path, element.Line)));
+            items.Add(Item("Go to source", () => shell.OpenSource(file.Path, element.Line), shell.Keys.KeyGesture("goToSource")));
 
         items.Add(new Separator());
-        items.Add(Item("Delete", () => shell.DeleteCommand.Execute(element), "Delete"));
+        items.Add(Item("Delete", () => shell.DeleteCommand.Execute(element), shell.Keys.KeyGesture("delete")));
 
         return new ContextMenu { ItemsSource = items };
     }
@@ -90,13 +90,13 @@ public static class ElementMenu
             items.Add(Submenu("Draw relation", relations.Select(t => Item(t.Label, () => shell.StartRelationCommand.Execute(t.Relation)))));
 
         items.Add(new Separator());
-        items.Add(Item("Relayout", () => diagram.Relayout()));
-        items.Add(Item("Fit to view", () => diagram.Fit(), "Ctrl+0"));
+        items.Add(Item("Auto-layout", () => diagram.Relayout(), shell.Keys.KeyGesture("autoLayout")));
+        items.Add(Item("Fit to view", () => diagram.Fit(), shell.Keys.KeyGesture("fit")));
         return new ContextMenu { ItemsSource = items };
     }
 
-    private static MenuItem Item(string header, Action action, string? gesture = null)
-        => new() { Header = header, Command = new RelayCommand(action), InputGesture = gesture is null ? null : Avalonia.Input.KeyGesture.Parse(gesture) };
+    private static MenuItem Item(string header, Action action, Avalonia.Input.KeyGesture? gesture = null)
+        => new() { Header = header, Command = new RelayCommand(action), InputGesture = gesture };
 
     private static MenuItem AsyncItem(string header, Func<Task> action)
         => new() { Header = header, Command = new AsyncRelayCommand(action) };

@@ -12,20 +12,6 @@
         Background="{DynamicResource WorkbenchBrush}"
         FontFamily="{DynamicResource UiFont}">
 
-  <Window.KeyBindings>
-    <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenFolderCommand}" />
-    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
-    <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAllCommand}" />
-    <KeyBinding Gesture="Ctrl+E" Command="{Binding ExportCommand}" />
-    <KeyBinding Gesture="Shift+F12" Command="{Binding FindUsagesCommand}" />
-    <KeyBinding Gesture="Ctrl+D0" Command="{Binding FitCommand}" />
-    <KeyBinding Gesture="F2" Command="{Binding RenameCommand}" />
-    <KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" />
-    <KeyBinding Gesture="Insert" Command="{Binding AddCommand}" />
-    <KeyBinding Gesture="Escape" Command="{Binding CancelToolCommand}" />
-    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
-    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
-  </Window.KeyBindings>
 
   <Grid RowDefinitions="44,*,26">
 
@@ -72,10 +58,10 @@
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
                     Margin="0,0,12,0" Spacing="6">
           <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding HasWorkspace}">
-            <Button Classes="flat" Command="{Binding UndoCommand}" ToolTip.Tip="Undo (Ctrl+Z)">
+            <Button Classes="flat" Command="{Binding UndoCommand}" ToolTip.Tip="{Binding Keys[undo]}">
               <ic:SymbolIcon Symbol="ArrowUndo" FontSize="17" />
             </Button>
-            <Button Classes="flat" Command="{Binding RedoCommand}" ToolTip.Tip="Redo (Ctrl+Y)">
+            <Button Classes="flat" Command="{Binding RedoCommand}" ToolTip.Tip="{Binding Keys[redo]}">
               <ic:SymbolIcon Symbol="ArrowRedo" FontSize="17" />
             </Button>
           </StackPanel>
@@ -99,12 +85,12 @@
             </AutoCompleteBox>
             <ic:SymbolIcon Symbol="Search" FontSize="15" Foreground="{DynamicResource TextFaintBrush}"
                            HorizontalAlignment="Left" VerticalAlignment="Center" Margin="9,0,0,0" IsHitTestVisible="False" />
-            <TextBlock Text="Ctrl K" Classes="faint" FontSize="11.5" HorizontalAlignment="Right"
+            <TextBlock Text="{Binding Keys[search], Converter={x:Static views:Converters.KeysOnly}}" Classes="faint" FontSize="11.5" HorizontalAlignment="Right"
                        VerticalAlignment="Center" Margin="0,0,9,0" IsHitTestVisible="False" />
           </Panel>
           <Button Classes="outline" Content="Export" Padding="12,4" Margin="4,0,2,0"
-                  Command="{Binding ExportCommand}" IsVisible="{Binding HasWorkspace}" ToolTip.Tip="Export the model (Ctrl+E)" />
-          <Button Classes="flat" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="Light or dark">
+                  Command="{Binding ExportCommand}" IsVisible="{Binding HasWorkspace}" ToolTip.Tip="{Binding Keys[export]}" />
+          <Button Classes="flat" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{Binding Keys[theme]}">
             <ic:SymbolIcon Symbol="WeatherMoon" FontSize="17" />
           </Button>
         </StackPanel>
@@ -117,17 +103,22 @@
       <!-- Activity bar -->
       <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}"
               BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+        <DockPanel>
+        <Button DockPanel.Dock="Bottom" Classes="flat" Width="34" Height="34" Margin="0,0,0,10" HorizontalAlignment="Center"
+                Command="{Binding OpenSettingsCommand}" ToolTip.Tip="{Binding Keys[settings]}">
+          <ic:SymbolIcon Symbol="Settings" FontSize="19" />
+        </Button>
         <StackPanel Margin="0,10,0,0" Spacing="4" HorizontalAlignment="Center">
           <Button Classes="flat" Classes.active="{Binding ShowsModel}" Width="34" Height="34"
-                  Command="{Binding ShowSideCommand}" CommandParameter="{x:Static vm:SidePanel.Model}" ToolTip.Tip="Model">
+                  Command="{Binding ShowSideCommand}" CommandParameter="{x:Static vm:SidePanel.Model}" ToolTip.Tip="{Binding Keys[showModel]}">
             <ic:SymbolIcon Symbol="DocumentMultiple" FontSize="19" />
           </Button>
           <Button Classes="flat" Classes.active="{Binding ShowsSearch}" Width="34" Height="34"
-                  Command="{Binding ShowSideCommand}" CommandParameter="{x:Static vm:SidePanel.Search}" ToolTip.Tip="Search the model">
+                  Command="{Binding ShowSideCommand}" CommandParameter="{x:Static vm:SidePanel.Search}" ToolTip.Tip="{Binding Keys[showSearch]}">
             <ic:SymbolIcon Symbol="Search" FontSize="18" />
           </Button>
           <Button Classes="flat" Classes.active="{Binding Bottom.IsOpen}" Width="34" Height="34"
-                  Command="{Binding ToggleProblemsCommand}" ToolTip.Tip="Problems">
+                  Command="{Binding ToggleProblemsCommand}" ToolTip.Tip="{Binding Keys[problems]}">
             <Panel>
               <ic:SymbolIcon Symbol="ErrorCircle" FontSize="18" />
               <Ellipse Width="6" Height="6" Fill="{DynamicResource ErrorBrush}" HorizontalAlignment="Right"
@@ -135,6 +126,7 @@
             </Panel>
           </Button>
         </StackPanel>
+        </DockPanel>
       </Border>
 
       <!-- The documents fill the whole width; the side panels float over them as frosted glass. -->
@@ -202,7 +194,7 @@
       <!-- Model / search panel -->
       <views:FrostPanel Width="{x:Static vm:ShellViewModel.SideWidth}" HorizontalAlignment="Left"
                         Source="{Binding #Stage}" Tint="{DynamicResource GlassBrush}"
-                        IsVisible="{Binding HasWorkspace}">
+                        IsVisible="{Binding ShowsSide}">
         <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
         <Panel>
           <views:ProjectBrowserView DataContext="{Binding Browser}" IsVisible="{Binding $parent[Window].((vm:ShellViewModel)DataContext).ShowsModel}" />
@@ -210,7 +202,7 @@
           <DockPanel IsVisible="{Binding ShowsSearch}">
             <StackPanel DockPanel.Dock="Top" Margin="14,14,14,8" Spacing="10">
               <TextBlock Text="SEARCH" Classes="caption" />
-              <TextBox Classes="field" Text="{Binding SearchText}" PlaceholderText="Name or qualified name" FontSize="13.5" MinHeight="32" />
+              <TextBox x:Name="SideSearch" Classes="field" Text="{Binding SearchText}" PlaceholderText="Name or qualified name" FontSize="13.5" MinHeight="32" />
             </StackPanel>
             <ScrollViewer>
               <ItemsControl ItemsSource="{Binding SearchResults}" Margin="6,0">
@@ -236,7 +228,7 @@
       <!-- Inspector -->
       <views:FrostPanel Width="{x:Static vm:ShellViewModel.InspectorWidth}" HorizontalAlignment="Right"
                         Source="{Binding #Stage}" Tint="{DynamicResource GlassBrush}"
-                        IsVisible="{Binding HasWorkspace}">
+                        IsVisible="{Binding ShowsInspector}">
         <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0">
           <views:PropertiesView DataContext="{Binding Properties}" />
         </Border>
@@ -256,7 +248,7 @@
           <TextBlock Text="{Binding Caret}" Classes="faint" FontSize="12" VerticalAlignment="Center"
                      IsVisible="{Binding ActiveSource, Converter={x:Static ObjectConverters.IsNotNull}}" />
           <Button Classes="link" Command="{Binding ToggleProblemsCommand}" IsVisible="{Binding HasWorkspace}"
-                  ToolTip.Tip="Show the problems">
+                  ToolTip.Tip="{Binding Keys[problems]}">
             <StackPanel Orientation="Horizontal" Spacing="7">
               <Panel VerticalAlignment="Center" IsVisible="{Binding HasProblems}">
                 <Ellipse Width="6" Height="6" Fill="{DynamicResource WarningBrush}" />

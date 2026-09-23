@@ -79,6 +79,7 @@ public sealed partial class ShellViewModel : ObservableObject
         ];
 
         Browser.SelectionChanged += OnBrowserSelection;
+        LoadSettings();
         Bottom.Log("SysML Studio started");
     }
 
@@ -110,7 +111,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// How much of the document area the floating side panels cover. The
     /// canvas runs on underneath them; tabs, panels and controls keep clear.
     /// </summary>
-    public Thickness CanvasInsets => HasWorkspace ? new Thickness(SideWidth, 0, InspectorWidth, 0) : default;
+    public Thickness CanvasInsets => new(ShowsSide ? SideWidth : 0, 0, ShowsInspector ? InspectorWidth : 0, 0);
 
     /// <summary>The diagram switcher shows over diagrams, and over an empty centre with something selected.</summary>
     public bool ShowsKinds => HasWorkspace && ActiveSource is null;
@@ -237,6 +238,8 @@ public sealed partial class ShellViewModel : ObservableObject
             ShowDocument(CreateDiagram(diagram, laidOut: true));
 
         OnPropertyChanged(nameof(HasWorkspace));
+        OnPropertyChanged(nameof(ShowsSide));
+        OnPropertyChanged(nameof(ShowsInspector));
         OnPropertyChanged(nameof(CanvasInsets));
         OnPropertyChanged(nameof(ShowsKinds));
         OnDocumentsChanged();

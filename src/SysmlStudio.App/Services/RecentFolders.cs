@@ -29,15 +29,8 @@ public static class RecentFolders
 {
     private const int Limit = 8;
 
-    /// <summary>
-    /// Where the list lives: the user's application data, or SYSML_STUDIO_HOME
-    /// when that is set, which the tests use so they never touch a real list.
-    /// </summary>
-    private static string StorePath => System.IO.Path.Combine(
-        Environment.GetEnvironmentVariable("SYSML_STUDIO_HOME") is { Length: > 0 } home
-            ? home
-            : System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SysmlStudio"),
-        "recent.json");
+    /// <summary>Where the list lives: the user's application data (see <see cref="AppHome"/>).</summary>
+    private static string StorePath => AppHome.PathOf("recent.json");
 
     public static IReadOnlyList<RecentFolder> Load()
     {

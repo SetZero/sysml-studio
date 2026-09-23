@@ -27,6 +27,9 @@
     <DataTemplate DataType="vm:ExportDialogViewModel">
       <views:ExportDialogView />
     </DataTemplate>
+    <DataTemplate DataType="vm:SettingsViewModel">
+      <views:SettingsView />
+    </DataTemplate>
   </Application.DataTemplates>
 
   <Application.Styles>

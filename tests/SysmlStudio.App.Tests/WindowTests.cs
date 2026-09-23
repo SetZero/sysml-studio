@@ -453,4 +453,72 @@ public sealed class WindowTests
 
         return sum;
     }
+
+    /// <summary>No two default shortcuts share a gesture, and every default parses.</summary>
+    [AvaloniaFact]
+    public void TheDefaultShortcutsAreDistinct()
+    {
+        var gestures = ShortcutCatalog.All.Where(a => a.DefaultGesture.Length > 0).ToList();
+        Assert.All(gestures, a => Assert.NotNull(ShortcutMap.Parse(a.DefaultGesture)));
+        Assert.Empty(gestures.GroupBy(a => a.DefaultGesture).Where(g => g.Count() > 1).Select(g => g.Key));
+        Assert.True(ShortcutCatalog.All.Count >= 40, $"only {ShortcutCatalog.All.Count} shortcuts");
+        Assert.Equal("Ctrl+Shift+1", ShortcutCatalog.Display("Ctrl+Shift+D1"));
+        Assert.Equal("Ctrl++", ShortcutCatalog.Display("Ctrl+OemPlus"));
+    }
+
+    /// <summary>
+    /// The cogwheel opens the settings; a shortcut is re-recorded by clicking
+    /// it and pressing keys, a clash blocks saving, and a saved shortcut works.
+    /// </summary>
+    [AvaloniaFact]
+    public void ShortcutsAreRecordedSavedAndUsed()
+    {
+        var settingsFile = Services.AppHome.PathOf("settings.json");
+        try
+        {
+            var (window, shell) = Open(Fixture);
+            _ = shell.OpenSettingsCommand.ExecuteAsync(null);
+            Settle();
+            var settings = Assert.IsType<SettingsViewModel>(shell.Dialog);
+            Shoot(window, "settings");
+
+            var toggle = settings.Groups.SelectMany(g => g.Rows).Single(r => r.Action.Id == "toggleModel");
+            settings.RecordCommand.Execute(toggle);
+            window.Focus(); // a click on the shortcut would have focused the window
+            Settle();
+            Assert.Same(toggle, settings.Recording);
+
+            // A clash first: Ctrl+S is Save's.
+            window.KeyPress(Avalonia.Input.Key.S, Avalonia.Input.RawInputModifiers.Control, Avalonia.Input.PhysicalKey.S, "s");
+            Settle();
+            Assert.Equal("Ctrl+S", toggle.Gesture);
+            Assert.True(settings.HasConflict);
+            Assert.False(settings.ConfirmCommand.CanExecute(null));
+            Assert.True(shell.HasWorkspace); // and Save did not run: the dialog caught the keys
+
+            settings.RecordCommand.Execute(toggle);
+            window.KeyPress(Avalonia.Input.Key.J, Avalonia.Input.RawInputModifiers.Control | Avalonia.Input.RawInputModifiers.Shift,
+                Avalonia.Input.PhysicalKey.J, "J");
+            Settle();
+            Assert.Equal("Ctrl+Shift+J", toggle.Gesture);
+            Assert.False(settings.HasConflict);
+
+            settings.ConfirmCommand.Execute(null);
+            Settle();
+            Assert.Null(shell.Dialog);
+            Assert.Equal("Show or hide the model panel (Ctrl+Shift+J)", shell.Keys["toggleModel"]);
+            Assert.Contains("Ctrl+Shift+J", File.ReadAllText(settingsFile), StringComparison.Ordinal);
+
+            Assert.True(shell.ShowsSide);
+            window.KeyPress(Avalonia.Input.Key.J, Avalonia.Input.RawInputModifiers.Control | Avalonia.Input.RawInputModifiers.Shift,
+                Avalonia.Input.PhysicalKey.J, "J");
+            Settle();
+            Assert.False(shell.ShowsSide);
+            Assert.Equal(0, shell.CanvasInsets.Left);
+        }
+        finally
+        {
+            File.Delete(settingsFile);
+        }
+    }
 }

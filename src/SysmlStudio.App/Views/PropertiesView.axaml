@@ -14,7 +14,7 @@
               Padding="18,0" Height="48">
         <Grid ColumnDefinitions="Auto,*">
           <Button Classes="link" Command="{Binding FindUsagesCommand}" VerticalAlignment="Center"
-                  ToolTip.Tip="Find usages (Shift+F12)">
+                  ToolTip.Tip="{Binding $parent[Window].((vm:ShellViewModel)DataContext).Keys[findUsages]}">
             <TextBlock Text="{Binding UsedIn}" FontSize="13.5" Classes="link" />
           </Button>
           <Button Grid.Column="1" Classes="link" Command="{Binding OpenSourceCommand}" VerticalAlignment="Center"
@@ -34,11 +34,11 @@
               <TextBlock Text="{Binding Owner}" Classes="mono faint" FontSize="11.5" TextTrimming="CharacterEllipsis" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Spacing="2">
-              <Button Classes="flat" Padding="5" ToolTip.Tip="Rename (F2)"
+              <Button Classes="flat" Padding="5" ToolTip.Tip="{Binding $parent[Window].((vm:ShellViewModel)DataContext).Keys[rename]}"
                       Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).RenameCommand}">
                 <ic:SymbolIcon Symbol="Edit" FontSize="16" />
               </Button>
-              <Button Classes="flat" Padding="5" ToolTip.Tip="Delete"
+              <Button Classes="flat" Padding="5" ToolTip.Tip="{Binding $parent[Window].((vm:ShellViewModel)DataContext).Keys[delete]}"
                       Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).DeleteCommand}">
                 <ic:SymbolIcon Symbol="Delete" FontSize="16" />
               </Button>
@@ -96,7 +96,7 @@
             <TextBlock Text="Description" Classes="label" />
             <Button Classes="link" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                     Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).EditDocCommand}"
-                    ToolTip.Tip="Edit the doc comment">
+                    ToolTip.Tip="{Binding $parent[Window].((vm:ShellViewModel)DataContext).Keys[description]}">
               <Panel>
                 <TextBlock Text="{Binding Documentation}" FontSize="14" TextWrapping="Wrap" LineHeight="21"
                            Foreground="{DynamicResource TextMutedBrush}" IsVisible="{Binding HasDocumentation}" />

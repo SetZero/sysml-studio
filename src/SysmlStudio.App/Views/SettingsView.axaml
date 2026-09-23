@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SysmlStudio.App.ViewModels"
+             xmlns:ic="using:FluentIcons.Avalonia"
+             x:Class="SysmlStudio.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <Border Width="560" Background="{DynamicResource SurfaceRaisedBrush}"
+          BoxShadow="0 12 40 0 #26000000" Padding="22,22,22,20">
+    <StackPanel Spacing="16">
+      <TextBlock Text="{Binding Title}" Classes="title" />
+
+      <!-- Appearance -->
+      <StackPanel Spacing="6">
+        <TextBlock Text="Theme" Classes="label" />
+        <Border Classes="segmented" Width="220" HorizontalAlignment="Left">
+          <UniformGrid Rows="1">
+            <RadioButton Classes="segment" GroupName="theme" IsChecked="{Binding IsLight}" Padding="8,5">
+              <TextBlock Text="Light" FontSize="13.5" />
+            </RadioButton>
+            <RadioButton Classes="segment" GroupName="theme" IsChecked="{Binding IsDark}" Padding="8,5">
+              <TextBlock Text="Dark" FontSize="13.5" />
+            </RadioButton>
+          </UniformGrid>
+        </Border>
+      </StackPanel>
+
+      <!-- Shortcuts -->
+      <StackPanel Spacing="8">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Keyboard shortcuts" Classes="label" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Classes="link" Command="{Binding ResetAllCommand}">
+            <TextBlock Text="Reset all" Classes="link" FontSize="13" />
+          </Button>
+        </Grid>
+        <TextBox Classes="field" Text="{Binding Filter}" PlaceholderText="Filter by name or keys" FontSize="13.5" MinHeight="32" />
+
+        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Height="380">
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Groups}" Margin="0,4,0,8">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ShortcutGroup">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Name}" Classes="caption" Margin="12,10,12,4" />
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ShortcutRow">
+                          <Grid ColumnDefinitions="*,150,Auto" Height="32" Margin="12,0,6,0">
+                            <TextBlock Text="{Binding Label}" FontSize="14" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" Classes.error="{Binding IsConflict}" />
+                            <Button Grid.Column="1" Classes="outline" Padding="8,3" HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Left" Classes.recording="{Binding IsRecording}"
+                                    Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).RecordCommand}"
+                                    CommandParameter="{Binding}" ToolTip.Tip="Click, then press the new keys">
+                              <TextBlock Text="{Binding Display}" Classes="mono" FontSize="12.5"
+                                         Classes.error="{Binding IsConflict}" />
+                            </Button>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,0,0" Width="56">
+                              <Button Classes="flat" Padding="4" ToolTip.Tip="Back to the default"
+                                      IsVisible="{Binding IsChanged}"
+                                      Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).ResetCommand}"
+                                      CommandParameter="{Binding}">
+                                <ic:SymbolIcon Symbol="ArrowReset" FontSize="14" />
+                              </Button>
+                              <Button Classes="flat" Padding="4" ToolTip.Tip="No shortcut"
+                                      IsVisible="{Binding HasGesture}"
+                                      Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).ClearCommand}"
+                                      CommandParameter="{Binding}">
+                                <ic:SymbolIcon Symbol="Dismiss" FontSize="12" />
+                              </Button>
+                            </StackPanel>
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Border>
+        <TextBlock Text="{Binding Conflict}" Classes="error" FontSize="13.5" TextWrapping="Wrap" IsVisible="{Binding HasConflict}" />
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button Classes="outline strong" Content="Cancel" Command="{Binding CancelCommand}" Padding="13,7" />
+        <Button Classes="primary" Content="{Binding ConfirmText}" Command="{Binding ConfirmCommand}" />
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

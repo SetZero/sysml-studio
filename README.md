@@ -35,6 +35,10 @@ change before it writes. The toolbar under a diagram adds elements and draws
 relations between two clicked boxes. Every edit is a patch over the text,
 re-parsed before it is accepted, kept in memory with undo until Save writes
 the changed files. Export writes the whole workspace as SysML v2 JSON or XMI.
+Nearly every command has a keyboard shortcut; the cogwheel at the bottom left
+opens the settings, where each one can be changed (click it, press the new
+keys) and the theme chosen. They are kept in `settings.json` in the user's
+application data.
 With no folder given, the window offers a folder picker, the recent folders
 and the sample model in `samples/vehicle`.
 

@@ -1,7 +1,9 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using SysmlStudio.App.ViewModels;
 using SysmlStudio.App.Views;
 using SysmlStudio.Diagrams;
@@ -188,6 +190,51 @@ public sealed class EditingWindowTests : IDisposable
             Assert.Contains("Vehicle", text, StringComparison.Ordinal);
             Assert.StartsWith(xmi ? "<?xml" : "[", text.TrimStart(), StringComparison.Ordinal);
         }
+    }
+
+    /// <summary>A right-click opens the element's menu: on a tree row, on a box, and on the empty canvas.</summary>
+    [AvaloniaFact]
+    public void RightClickOpensTheMenu()
+    {
+        var (window, shell) = Open();
+        shell.Select(shell.Workspace!.Find("Sample")!);
+        shell.OpenDiagramCommand.Execute(DiagramKind.Definition);
+        Settle();
+
+        var opened = new List<ContextMenu>();
+        using var watch = MenuBase.OpenedEvent.AddClassHandler<ContextMenu>((menu, _) => opened.Add(menu));
+
+        void RightClick(Control target, string what)
+        {
+            var at = target.TranslatePoint(new Avalonia.Point(target.Bounds.Width / 2, Math.Min(12, target.Bounds.Height / 2)), window)!.Value;
+            var before = opened.Count;
+            window.MouseMove(at);
+            window.MouseDown(at, Avalonia.Input.MouseButton.Right);
+            window.MouseUp(at, Avalonia.Input.MouseButton.Right);
+            Settle();
+            Assert.True(opened.Count > before, $"no menu on {what}");
+            foreach (var menu in opened)
+                menu.Close();
+            Settle();
+        }
+
+        var row = window.GetVisualDescendants().OfType<TreeViewItem>()
+            .First(i => i.DataContext is ElementViewModel { Element.Name: "Engine" });
+        RightClick(row, "a tree row");
+
+        var box = window.GetVisualDescendants().OfType<Nodify.Avalonia.ItemContainer>()
+            .First(c => c.DataContext is DiagramNodeViewModel { Element.Name: "Engine" });
+        RightClick(box, "a box");
+
+        var editor = window.GetVisualDescendants().OfType<Nodify.Avalonia.NodifyEditor>().Single();
+        var empty = editor.TranslatePoint(new Point(editor.Bounds.Width - 300, 40), window)!.Value;
+        var menus = opened.Count;
+        window.MouseMove(empty);
+        window.MouseDown(empty, Avalonia.Input.MouseButton.Right);
+        window.MouseUp(empty, Avalonia.Input.MouseButton.Right);
+        Settle();
+        Assert.True(opened.Count > menus, "no menu on the empty canvas");
+        Assert.Equal(menus + 1, opened.Count); // one menu, not two
     }
 
     [AvaloniaFact]

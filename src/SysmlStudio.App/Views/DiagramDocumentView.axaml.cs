@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -21,10 +22,19 @@ public sealed partial class DiagramDocumentView : UserControl
         NodifyEditor.EnableDraggingContainersOptimizations = false;
     }
 
+    private Point? _rightPressed;
+    private DateTime _menuOpened;
+
     public DiagramDocumentView()
     {
         InitializeComponent();
         DataContextChanged += (_, _) => Wire();
+
+        // Nodify pans with the right button and handles its release, so the
+        // context-menu event never reaches the canvas. A right click that did
+        // not move — no pan — opens the menu here instead.
+        Editor.AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+        Editor.AddHandler(PointerReleasedEvent, OnPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     private ShellViewModel? Shell => this.FindAncestorOfType<Window>()?.DataContext as ShellViewModel;
@@ -41,17 +51,40 @@ public sealed partial class DiagramDocumentView : UserControl
             shell.AddToDiagramCommand.Execute(kind);
     }
 
-    /// <summary>Right-click on a box opens the element's menu; on the empty canvas, the diagram's.</summary>
+    private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
+        => _rightPressed = e.GetCurrentPoint(this).Properties.IsRightButtonPressed ? e.GetPosition(this) : null;
+
+    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.InitialPressMouseButton != MouseButton.Right || _rightPressed is not { } pressed)
+            return;
+
+        _rightPressed = null;
+        var moved = e.GetPosition(this) - pressed;
+        if (Math.Abs(moved.X) + Math.Abs(moved.Y) < 4 && e.Source is Control source)
+            ShowMenu(source);
+    }
+
+    /// <summary>The menu key or Shift+F10, and a right click wherever Nodify lets the event through.</summary>
     private void OnContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if (Shell is not { } shell || DataContext is not DiagramDocumentViewModel diagram || e.Source is not Control source)
+        // The same right click may arrive here too; one menu is enough.
+        if (e.Source is Control source && DateTime.UtcNow - _menuOpened > TimeSpan.FromMilliseconds(300))
+            ShowMenu(source);
+        e.Handled = true;
+    }
+
+    /// <summary>On a box, the element's menu; on the empty canvas, the diagram's.</summary>
+    private void ShowMenu(Control source)
+    {
+        if (Shell is not { } shell || DataContext is not DiagramDocumentViewModel diagram)
             return;
 
         var menu = source.FindAncestorOfType<ItemContainer>(includeSelf: true) is { DataContext: DiagramNodeViewModel { IsPseudoNode: false } node }
             ? ElementMenu.For(shell, node.Element)
             : ElementMenu.ForCanvas(shell, diagram);
         menu.Open(source);
-        e.Handled = true;
+        _menuOpened = DateTime.UtcNow;
     }
 
     /// <summary>Hands the view model the two things only the view can do: frame and render.</summary>

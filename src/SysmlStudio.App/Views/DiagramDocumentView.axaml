@@ -152,7 +152,8 @@
             Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1" Padding="4" BoxShadow="0 2 10 0 #18000000">
       <StackPanel Orientation="Horizontal" Spacing="2">
-        <Button Classes="flat" Classes.active="{Binding IsPointer}" Padding="7,5" ToolTip.Tip="Select and move (Esc)"
+        <Button Classes="flat" Classes.active="{Binding IsPointer}" Padding="7,5"
+                ToolTip.Tip="{Binding $parent[Window].((vm:ShellViewModel)DataContext).Keys[cancel]}"
                 Command="{Binding $parent[Window].((vm:ShellViewModel)DataContext).CancelToolCommand}">
           <ic:SymbolIcon Symbol="Cursor" FontSize="16" />
         </Button>
@@ -172,7 +173,8 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
         <Border Width="1" Margin="6,4" Background="{DynamicResource BorderBrush}" />
-        <Button Classes="flat" Padding="10,5" Command="{Binding RelayoutCommand}" ToolTip.Tip="Lay the diagram out again">
+        <Button Classes="flat" Padding="10,5" Command="{Binding RelayoutCommand}"
+                ToolTip.Tip="{Binding $parent[Window].((vm:ShellViewModel)DataContext).Keys[autoLayout]}">
           <TextBlock Text="Auto-layout" FontSize="14" Foreground="{DynamicResource TextMutedBrush}" />
         </Button>
       </StackPanel>
@@ -180,7 +182,7 @@
 
     <!-- Zoom -->
     <Button Classes="link" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,18,14"
-            Command="{Binding FitCommand}" ToolTip.Tip="Fit to view (Ctrl+0)">
+            Command="{Binding FitCommand}" ToolTip.Tip="{Binding $parent[Window].((vm:ShellViewModel)DataContext).Keys[fit]}">
       <TextBlock Text="{Binding ZoomText}" Classes="mono faint" FontSize="12" />
     </Button>
     </Panel>
