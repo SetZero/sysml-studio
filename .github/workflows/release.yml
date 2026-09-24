@@ -1,0 +1,122 @@
+name: Release
+
+# A release is a tag: set <VersionPrefix> in Directory.Build.props, commit,
+# then tag that commit v<VersionPrefix> and push the tag. Run by hand, the
+# workflow builds and checks every package without publishing anything.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # smoke: the runner can start this build, so it is started.
+          - { runner: windows-latest, rid: win-x64, smoke: true }
+          - { runner: windows-latest, rid: win-arm64, smoke: false }
+          - { runner: ubuntu-latest, rid: linux-x64, smoke: true }
+          - { runner: ubuntu-latest, rid: linux-arm64, smoke: false }
+          - { runner: macos-latest, rid: osx-arm64, smoke: true }
+          - { runner: macos-latest, rid: osx-x64, smoke: false }
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # ANTLR generates the parser at build time and needs a JDK.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Version
+        run: |
+          declared="$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            version="${GITHUB_REF_NAME#v}"
+            if [ "$version" != "$declared" ]; then
+              echo "::error::tag $GITHUB_REF_NAME does not match VersionPrefix $declared in Directory.Build.props"
+              exit 1
+            fi
+          else
+            version="$declared-dev.$GITHUB_RUN_NUMBER"
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Package
+        run: scripts/package.sh ${{ matrix.rid }} "$VERSION" artifacts/packages
+
+      - name: Install a display server
+        if: matrix.smoke && runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Start it
+        if: matrix.smoke
+        run: scripts/smoke.sh ${{ matrix.rid }} artifacts/packages
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.rid }}
+          path: artifacts/packages/*
+          if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: packages
+        run: sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cat > notes.md <<'EOF'
+          ## Download
+
+          | System | Package |
+          |---|---|
+          | Windows | `SysML-Studio-windows-x64.zip` · `SysML-Studio-windows-arm64.zip` |
+          | macOS | `SysML-Studio-macos-arm64.zip` (Apple silicon) · `SysML-Studio-macos-x64.zip` (Intel) |
+          | Debian, Ubuntu | `sysml-studio_amd64.deb` · `sysml-studio_arm64.deb` |
+          | Other Linux | `SysML-Studio-linux-x64.tar.gz` · `SysML-Studio-linux-arm64.tar.gz` |
+
+          Nothing else needs to be installed.
+
+          - **Windows:** unzip and run `SysML Studio.exe`. The build is not signed yet, so SmartScreen may ask: choose *More info* → *Run anyway*.
+          - **macOS:** unzip and move *SysML Studio* to Applications. It is not notarized yet: the first time, right-click it and choose *Open*.
+          - **Debian and Ubuntu:** `sudo apt install ./sysml-studio_amd64.deb`, then start *SysML Studio* from the menu or `sysml-studio` from a terminal.
+          - **Other Linux:** unpack and run `sysml-studio/sysml-studio`.
+
+          A sample model comes with it: open the `samples/drone` folder next to the program.
+
+          EOF
+          gh release create "$GITHUB_REF_NAME" packages/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "SysML Studio $version" \
+            --notes-file notes.md \
+            --generate-notes \
+            --verify-tag
