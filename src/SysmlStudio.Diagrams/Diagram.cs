@@ -67,7 +67,7 @@ public sealed class DiagramEdge(DiagramNode source, DiagramNode target, Relation
     /// <summary>The name of the relation itself, when it has one and the label says something else.</summary>
     public string? Name { get; init; }
 
-    /// <summary>The route MSAGL found around the boxes, in the same coordinates as the nodes.</summary>
+    /// <summary>The route found around the boxes and, where cheap, around other edges, in the same coordinates as the nodes.</summary>
     public List<(double X, double Y)> Waypoints { get; } = [];
 
     /// <summary>Where MSAGL put the label's centre, clear of boxes and other labels; null without a route.</summary>

@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\samples\**" LinkBase="Samples" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
