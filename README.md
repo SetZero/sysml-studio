@@ -40,10 +40,10 @@ Nothing else needs to be installed, and a sample model comes with it.
 
 | System | Package |
 |---|---|
-| Windows | [x64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-windows-x64.zip) · [ARM64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-windows-arm64.zip) — unzip and run `SysML Studio.exe` |
-| macOS | [Apple silicon](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-macos-arm64.zip) · [Intel](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-macos-x64.zip) — unzip, move to Applications, right-click → *Open* the first time |
-| Debian, Ubuntu | [amd64](https://github.com/SetZero/sysml-studio/releases/latest/download/sysml-studio_amd64.deb) · [arm64](https://github.com/SetZero/sysml-studio/releases/latest/download/sysml-studio_arm64.deb) — `sudo apt install ./sysml-studio_amd64.deb` |
-| Other Linux | [x64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-linux-x64.tar.gz) · [ARM64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-linux-arm64.tar.gz) — unpack and run `sysml-studio/sysml-studio` |
+| Windows | [x64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-windows-x64.zip) · [ARM64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-windows-arm64.zip) |
+| macOS | [Apple silicon](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-macos-arm64.zip) · [Intel](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-macos-x64.zip) |
+| Debian, Ubuntu | [amd64](https://github.com/SetZero/sysml-studio/releases/latest/download/sysml-studio_amd64.deb) · [arm64](https://github.com/SetZero/sysml-studio/releases/latest/download/sysml-studio_arm64.deb) |
+| Other Linux | [x64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-linux-x64.tar.gz) · [ARM64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-linux-arm64.tar.gz) |
 
 The builds are not code-signed yet, so Windows and macOS ask once before
 they open it.
@@ -78,7 +78,7 @@ around them; drag anything where you want it.
 
 ## Editing
 
-Right-click an element — in the tree or on a diagram — to add inside it,
+Right-click an element to add inside it,
 rename it, type it, mark its maturity or delete it. Each dialog says what it
 will change before it writes. The toolbar under a diagram adds elements and
 draws relations between two clicked boxes: connect, flow, succession,
@@ -151,11 +151,11 @@ Nothing here reimplements what a library already does.
 
 | Piece | State |
 |---|---|
-| `SysmlStudio.Syntax` — parse SysML v2 text, keep tokens and comments | works |
-| `SysmlStudio.Model` — element tree, relations, name resolution | works |
-| `SysmlStudio.Diagrams` — the five diagram kinds, MSAGL layout | works |
-| `SysmlStudio.Editing` — edits as text patches | rename (every reference, across files), delete, add, set type, specialize, maturity, doc comment, and drawing connect / flow / succession / transition / satisfy / dependency / allocate / specialization / composition; each re-parsed before it is accepted |
-| `SysmlStudio.App` — the Avalonia application | model tree, diagram tabs with a kind switcher, inspector, problems and usages, right-click menus on the tree and the canvas, edit dialogs that say what they will change, a relation tool, undo/redo, source tabs, SysML v2 JSON and XMI export; Save writes the changed files |
+| `SysmlStudio.Syntax` | works |
+| `SysmlStudio.Model` | works |
+| `SysmlStudio.Diagrams` | works |
+| `SysmlStudio.Editing` | rename (every reference, across files), delete, add, set type, specialize, maturity, doc comment, and drawing connect / flow / succession / transition / satisfy / dependency / allocate / specialization / composition; each re-parsed before it is accepted |
+| `SysmlStudio.App` | model tree, diagram tabs with a kind switcher, inspector, problems and usages, right-click menus on the tree and the canvas, edit dialogs that say what they will change, a relation tool, undo/redo, source tabs, SysML v2 JSON and XMI export; Save writes the changed files |
 
 ### Building
 
@@ -179,7 +179,7 @@ scripts/gate.sh format   # one gate by name
 | `build` | the build with the .NET analyzers, Roslynator and SonarAnalyzer on and **every warning an error** |
 | `test` | the xUnit suites, including a headless run of the real window: every diagram kind, a source tab with an error, the dark theme. `SYSML_STUDIO_SHOTS=<folder>` saves what each test rendered |
 | `sample` | the sample models parse |
-| `model` | loads a real model — `$SYSML_STUDIO_MODEL`, or `../os/docs/sysml` when that checkout is beside this one — and fails if a file does not parse |
+| `model` | loads a real model and fails if a file does not parse |
 
 Judge a gate by its exit status, not by its last line. `scripts/gate.sh` stops
 at the first gate that fails.
@@ -198,7 +198,7 @@ starts the Windows, Linux and macOS ones with `scripts/smoke.sh` to check
 they open, and publishes them with checksums as a GitHub release. It refuses
 a tag that does not match `VersionPrefix`. Run by hand, it builds and checks
 the packages without publishing. Package names carry no version, so
-`releases/latest/download/<name>` — which the website links to — always
+`releases/latest/download/<name>` always
 serves the newest one.
 
 ### Screenshots and website
@@ -217,10 +217,9 @@ The website is `docs/index.html`, served by GitHub Pages from `docs/` on
 ### Commits
 
 A commit message is a subject, a blank line, and a body that argues the why.
-No `Co-authored-by:` trailer, no "Generated with" line, no tool signature —
-one author per commit.
+No `Co-authored-by:` trailer, no "Generated with" line, no tool signature.
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE). The vendored grammar in `grammar/` is MIT too;
+MIT. The vendored grammar in `grammar/` is MIT too;
 the bundled IBM Plex fonts are under the SIL Open Font Licence.
