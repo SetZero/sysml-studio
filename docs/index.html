@@ -162,8 +162,8 @@ nav .links a:hover { color: var(--text); text-decoration: none; }
 .install .cmd { margin: 8px 0 0; padding: 8px 10px; border-radius: 6px; background: var(--surface-2); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* Hero: copy on the left, the window on the right. The window is sized by
-   the viewport's height as well as its width, so it is never cut off, and
-   its inner edge fades into the page. */
+   the viewport's height as well as its width, so it is never cut off; it
+   runs to the edge of the screen and fades out there. */
 .hero {
   position: relative; overflow-x: clip;
   min-height: calc(100svh - 58px); display: flex; align-items: center; padding: 56px 0;
@@ -178,7 +178,7 @@ nav .links a:hover { color: var(--text); text-decoration: none; }
 .hero-grid {
   position: relative; z-index: 3; width: 100%;
   display: grid; grid-template-columns: minmax(320px, 480px) minmax(0, 1fr); gap: 32px; align-items: center;
-  padding-left: max(24px, calc((100vw - 1160px) / 2 + 24px)); padding-right: 24px;
+  padding-left: max(24px, calc((100vw - 1160px) / 2 + 24px)); padding-right: 0;
 }
 .hero-copy { position: relative; z-index: 2; }
 .hero h1 { font-size: clamp(38px, 3.5vw, 58px); letter-spacing: -.02em; font-weight: 500; }
@@ -187,11 +187,11 @@ nav .links a:hover { color: var(--text); text-decoration: none; }
 .hero .cta { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
 .hero .meta { margin-top: 18px; color: var(--muted); font-size: 14px; }
 .hero-shot {
-  width: 100%;
+  width: 100%; justify-self: end;
   /* 16:10 screenshot; 170px is the nav, the hero's padding and a margin. */
   max-width: calc((100svh - 170px) * 1.6);
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14%);
-  mask-image: linear-gradient(to right, transparent 0, #000 14%);
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 16%);
+  mask-image: linear-gradient(to left, transparent 0, #000 16%);
 }
 
 .window {
