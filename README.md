@@ -11,12 +11,13 @@
   <img src="https://img.shields.io/badge/.NET-10-512BD4" alt=".NET 10">
   <img src="https://img.shields.io/badge/Avalonia-12-8B44AC" alt="Avalonia 12">
   <img src="https://img.shields.io/badge/SysML-v2-4a6a9c" alt="SysML v2">
+  <a href="https://github.com/SetZero/sysml-studio/releases/latest"><img src="https://img.shields.io/github/v/release/SetZero/sysml-studio?label=release" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-2f7a4b" alt="MIT licence"></a>
 </p>
 
 <p align="center">
   <a href="https://setzero.github.io/sysml-studio/"><b>Website</b></a> ·
-  <a href="#get-started"><b>Get started</b></a> ·
+  <a href="#download"><b>Download</b></a> ·
   <a href="#diagrams"><b>Diagrams</b></a> ·
   <a href="#development"><b>Development</b></a>
 </p>
@@ -31,6 +32,21 @@ diagrams, change it, and save. Saving writes a minimal patch over the text, so
 comments, doc blocks and formatting survive an edit and a diff shows only what
 actually changed. It is the Enterprise Architect idea, on .NET, cross-platform,
 without a project database.
+
+## Download
+
+Get the [latest release](https://github.com/SetZero/sysml-studio/releases/latest).
+Nothing else needs to be installed, and a sample model comes with it.
+
+| System | Package |
+|---|---|
+| Windows | [x64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-windows-x64.zip) · [ARM64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-windows-arm64.zip) — unzip and run `SysML Studio.exe` |
+| macOS | [Apple silicon](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-macos-arm64.zip) · [Intel](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-macos-x64.zip) — unzip, move to Applications, right-click → *Open* the first time |
+| Debian, Ubuntu | [amd64](https://github.com/SetZero/sysml-studio/releases/latest/download/sysml-studio_amd64.deb) · [arm64](https://github.com/SetZero/sysml-studio/releases/latest/download/sysml-studio_arm64.deb) — `sudo apt install ./sysml-studio_amd64.deb` |
+| Other Linux | [x64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-linux-x64.tar.gz) · [ARM64](https://github.com/SetZero/sysml-studio/releases/latest/download/SysML-Studio-linux-arm64.tar.gz) — unpack and run `sysml-studio/sysml-studio` |
+
+The builds are not code-signed yet, so Windows and macOS ask once before
+they open it.
 
 ## Why SysML Studio
 
@@ -94,7 +110,7 @@ opens the settings, where each one can be changed (click it, press the new
 keys) and the theme chosen. They are kept in `settings.json` in the user's
 application data.
 
-## Get started
+## Build from source
 
 Needs the .NET 10 SDK and a JDK (ANTLR generates the parser at build time;
 `Antlr4BuildTasks` downloads a JDK if there is none).
@@ -167,6 +183,23 @@ scripts/gate.sh format   # one gate by name
 
 Judge a gate by its exit status, not by its last line. `scripts/gate.sh` stops
 at the first gate that fails.
+
+### Releases
+
+The version lives in `<VersionPrefix>` in `Directory.Build.props`. To release,
+set it, commit, and push a tag of that version:
+
+```
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+The `Release` workflow then builds every package with `scripts/package.sh`,
+starts the Windows, Linux and macOS ones with `scripts/smoke.sh` to check
+they open, and publishes them with checksums as a GitHub release. It refuses
+a tag that does not match `VersionPrefix`. Run by hand, it builds and checks
+the packages without publishing. Package names carry no version, so
+`releases/latest/download/<name>` — which the website links to — always
+serves the newest one.
 
 ### Screenshots and website
 

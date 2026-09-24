@@ -6,7 +6,7 @@
 <title>SysML Studio</title>
 <meta name="description" content="A graphical viewer and editor for SysML v2 models in the textual notation. Your .sysml files stay the source of truth: every edit is a minimal patch over the text.">
 <meta property="og:title" content="SysML Studio">
-<meta property="og:description" content="Draw, browse and edit SysML v2 models without giving up the text. Cross-platform, on .NET and Avalonia.">
+<meta property="og:description" content="Draw, browse and edit SysML v2 models without giving up the text.">
 <meta property="og:image" content="https://setzero.github.io/sysml-studio/images/interconnection.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -126,24 +126,73 @@ nav .links a:hover { color: var(--text); text-decoration: none; }
 .btn.ghost { border-color: var(--line); color: var(--text); background: var(--surface); }
 .btn.ghost:hover { border-color: var(--muted); }
 
-/* Hero */
+/* Download: the main button picks the reader's system, the arrow opens
+   every other system and format. */
+.dl { position: relative; display: inline-flex; }
+.dl .dl-main { border-radius: 6px 0 0 6px; }
+.dl .dl-main:only-child { border-radius: 6px; }
+.dl-more {
+  border-radius: 0 6px 6px 0; padding: 0 13px; cursor: pointer;
+  border: 0; border-left: 1px solid color-mix(in srgb, var(--accent-ink) 28%, transparent);
+}
+.dl-more svg { transition: transform .15s; }
+.dl-more[aria-expanded="true"] svg { transform: rotate(180deg); }
+.dl-menu {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; width: 330px; max-width: calc(100vw - 32px);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 8px; text-align: left;
+}
+.dl-menu[hidden] { display: none; }
+.dl-menu .group { font: 500 11px/1 "IBM Plex Mono", monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 12px 10px 6px; }
+.dl-menu .group:first-child { padding-top: 6px; }
+.dl-menu a {
+  display: flex; justify-content: space-between; gap: 16px; padding: 8px 10px; border-radius: 6px;
+  color: var(--text); font-size: 16px;
+}
+.dl-menu a:hover, .dl-menu a:focus-visible { background: var(--surface-2); text-decoration: none; outline: none; }
+.dl-menu a[aria-current="true"] { color: var(--accent); }
+.dl-menu a .size { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.dl-menu .all { border-top: 1px solid var(--line); margin-top: 6px; border-radius: 0 0 6px 6px; color: var(--muted); font-size: 15px; }
+.install { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; }
+.install > div { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 22px 22px 24px; }
+.install > div.mine { border-color: var(--accent); }
+.install h3 { font-size: 19px; margin-bottom: 8px; }
+.install p { color: var(--muted); font-size: 16px; }
+.install p + p, .install .cmd + p { margin-top: 8px; }
+.install .cmd { margin: 8px 0 0; padding: 8px 10px; border-radius: 6px; background: var(--surface-2); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Hero: copy on the left, the window on the right. The window is sized by
+   the viewport's height as well as its width, so it is never cut off, and
+   its inner edge fades into the page. */
 .hero {
-  position: relative; padding: 88px 0 0; overflow: hidden;
+  position: relative; overflow-x: clip;
+  min-height: calc(100svh - 58px); display: flex; align-items: center; padding: 56px 0;
   background-image: radial-gradient(var(--dot) 1.2px, transparent 1.2px);
   background-size: 22px 22px;
 }
 .hero::after {
-  content: ""; position: absolute; inset: auto 0 0 0; height: 45%;
+  content: ""; position: absolute; inset: auto 0 0 0; height: 30%;
   background: linear-gradient(transparent, var(--bg));
   pointer-events: none;
 }
-.hero-copy { max-width: 760px; margin: 0 auto; text-align: center; }
-.hero h1 { font-size: clamp(38px, 6.4vw, 68px); letter-spacing: -.02em; font-weight: 500; }
+.hero-grid {
+  position: relative; z-index: 3; width: 100%;
+  display: grid; grid-template-columns: minmax(320px, 480px) minmax(0, 1fr); gap: 32px; align-items: center;
+  padding-left: max(24px, calc((100vw - 1160px) / 2 + 24px)); padding-right: 24px;
+}
+.hero-copy { position: relative; z-index: 2; }
+.hero h1 { font-size: clamp(38px, 3.5vw, 58px); letter-spacing: -.02em; font-weight: 500; }
 .hero h1 em { font-style: normal; color: var(--accent); }
-.hero .lede { margin: 22px auto 0; max-width: 620px; color: var(--muted); font-size: clamp(18px, 2.2vw, 21px); }
-.hero .cta { display: flex; gap: 12px; justify-content: center; margin-top: 34px; flex-wrap: wrap; }
+.hero .lede { margin-top: 22px; color: var(--muted); font-size: clamp(18px, 1.5vw, 20px); }
+.hero .cta { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
 .hero .meta { margin-top: 18px; color: var(--muted); font-size: 14px; }
-.hero-shot { position: relative; z-index: 1; margin: 60px auto 0; max-width: 1120px; }
+.hero-shot {
+  width: 100%;
+  /* 16:10 screenshot; 170px is the nav, the hero's padding and a margin. */
+  max-width: calc((100svh - 170px) * 1.6);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14%);
+  mask-image: linear-gradient(to right, transparent 0, #000 14%);
+}
 
 .window {
   border-radius: 10px; overflow: hidden; background: var(--surface);
@@ -174,7 +223,7 @@ section { padding: 110px 0; }
 .pillar p { color: var(--muted); font-size: 17px; }
 
 /* Split feature rows */
-.split > *, .start > *, .gallery-body > *, .pillars > *, .stack > *, .grid4 > * { min-width: 0; }
+.split > *, .gallery-body > *, .pillars > *, .grid4 > * { min-width: 0; }
 .split { display: grid; grid-template-columns: 5fr 7fr; gap: 56px; align-items: center; }
 .split.flip { grid-template-columns: 7fr 5fr; }
 .split.flip .copy { order: 2; }
@@ -194,15 +243,15 @@ section { padding: 110px 0; }
   margin-top: 24px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
   background: var(--surface); font-size: 13.5px;
 }
-.diff .file { padding: 9px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font: 500 12px/1 "IBM Plex Mono", monospace; display: flex; justify-content: space-between; }
-.diff pre { margin: 0; padding: 10px 0; overflow-x: auto; line-height: 1.7; }
-.diff span { display: block; padding: 0 14px; white-space: pre; }
+.diff .file { white-space: nowrap; gap: 16px; padding: 9px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font: 500 12px/1 "IBM Plex Mono", monospace; display: flex; justify-content: space-between; }
+.diff pre { margin: 0; padding: 10px 0; line-height: 1.7; }
+.diff span { display: block; padding: 0 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .diff .a { background: var(--add-bg); color: var(--add); }
 .diff .d { background: var(--del-bg); color: var(--del); }
 .diff .c { color: var(--muted); }
 
 /* Diagram gallery */
-.tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 8px; width: fit-content; max-width: 100%; overflow-x: auto; margin-bottom: 26px; }
+.tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 8px; width: fit-content; max-width: 100%; flex-wrap: wrap; margin-bottom: 26px; }
 .tab {
   font: 500 15px/1 "IBM Plex Sans Condensed", sans-serif; color: var(--muted);
   background: none; border: 0; padding: 10px 16px; border-radius: 6px; cursor: pointer; white-space: nowrap;
@@ -222,7 +271,7 @@ section { padding: 110px 0; }
   overflow: hidden; font-size: 13.5px;
 }
 .code .file { padding: 9px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font: 500 12px/1 "IBM Plex Mono", monospace; }
-.code pre { margin: 0; padding: 14px; overflow-x: auto; line-height: 1.65; }
+.code pre { margin: 0; padding: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
 .code .k { color: var(--accent); }
 .code .m { color: var(--muted); font-style: italic; }
 
@@ -231,38 +280,6 @@ section { padding: 110px 0; }
 .mini { border-top: 1px solid var(--line); padding-top: 18px; }
 .mini h3 { font-size: 18px; margin-bottom: 8px; }
 .mini p { font-size: 16px; color: var(--muted); }
-
-/* Built from */
-.stack { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.stack a {
-  display: block; padding: 22px; border: 1px solid var(--line); border-radius: 8px;
-  background: var(--surface); color: var(--text);
-}
-.stack a:hover { border-color: var(--accent); text-decoration: none; }
-.stack .what { font: 500 12px/1 "IBM Plex Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.stack .name { font-size: 20px; font-weight: 500; margin: 10px 0 6px; }
-.stack p { font-size: 15px; color: var(--muted); }
-
-/* Get started */
-.start { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
-.terminal {
-  border-radius: 10px; background: #15171a; color: #d7dae0; border: 1px solid #2a2d33;
-  box-shadow: var(--shadow); overflow: hidden;
-}
-.terminal .bar { display: flex; gap: 7px; padding: 12px 14px; border-bottom: 1px solid #2a2d33; }
-.terminal .bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a3e45; }
-.terminal pre { margin: 0; padding: 18px 20px 22px; font-size: 14px; line-height: 1.8; overflow-x: auto; }
-.terminal .p { color: #8ea8d4; user-select: none; }
-.terminal .c { color: #7c828c; }
-.steps { list-style: none; counter-reset: s; padding: 0; margin: 26px 0 0; display: grid; gap: 18px; }
-.steps li { counter-increment: s; position: relative; padding-left: 44px; }
-.steps li::before {
-  content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%;
-  border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center;
-  font: 500 13px/1 "IBM Plex Mono", monospace; color: var(--accent);
-}
-.steps b { font-weight: 500; }
-.steps p { color: var(--muted); font-size: 16px; }
 
 footer { border-top: 1px solid var(--line); padding: 36px 0 48px; color: var(--muted); font-size: 15px; }
 footer .wrap { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
@@ -274,19 +291,26 @@ dialog.lightbox::backdrop { background: rgb(0 0 0 / 72%); }
 dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cursor: zoom-out; }
 
 @media (max-width: 960px) {
-  .split, .split.flip, .gallery-body, .start { grid-template-columns: 1fr; gap: 32px; }
+  .install { grid-template-columns: 1fr; }
+  .split, .split.flip, .gallery-body { grid-template-columns: 1fr; gap: 32px; }
+  .hero { min-height: 0; }
+  .hero-grid { grid-template-columns: 1fr; gap: 44px; padding: 0 24px; }
+  .hero-copy { text-align: center; max-width: 640px; margin: 0 auto; }
+  .hero .cta { justify-content: center; }
+  .hero .dl-menu { left: 50%; transform: translateX(-50%); }
+  .hero-shot { max-width: none; -webkit-mask-image: none; mask-image: none; }
   .split.flip .copy { order: 0; }
   .pillars { grid-template-columns: 1fr; }
-  .grid4, .stack { grid-template-columns: 1fr 1fr; }
+  .grid4 { grid-template-columns: 1fr 1fr; }
   section { padding: 80px 0; }
   .split + .split { margin-top: 80px; }
 }
 @media (max-width: 600px) {
   .wrap { padding: 0 16px; }
   nav .links a.hide-sm { display: none; }
-  .grid4, .stack { grid-template-columns: 1fr; }
-  .hero { padding-top: 56px; }
-  .hero-shot { margin-top: 40px; }
+  .grid4 { grid-template-columns: 1fr; }
+  .hero { padding: 40px 0; }
+  .hero-grid { padding: 0 16px; gap: 32px; }
   body { font-size: 17px; }
 }
 </style>
@@ -299,7 +323,7 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
     <div class="links">
       <a class="hide-sm" href="#diagrams">Diagrams</a>
       <a class="hide-sm" href="#editing">Editing</a>
-      <a class="hide-sm" href="#start">Get started</a>
+      <a class="hide-sm" href="#download">Download</a>
       <a href="https://github.com/SetZero/sysml-studio">GitHub</a>
       <button class="icon-btn" id="theme" type="button" aria-label="Switch between light and dark">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -309,23 +333,25 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
 </nav>
 
 <header class="hero" id="top">
-  <div class="wrap">
+  <div class="hero-grid">
     <div class="hero-copy">
-      <span class="eyebrow">SysML v2 · textual notation · open source</span>
+      <span class="eyebrow">SysML v2 · open source</span>
       <h1 style="margin-top:18px">Draw your model.<br><em>Keep your text.</em></h1>
       <p class="lede">SysML Studio is a graphical viewer and editor for SysML v2. Open a folder of <code>.sysml</code> files, browse it as a tree, read it as diagrams, change it&nbsp;— and every change lands as a small, reviewable patch in the files you already version.</p>
       <div class="cta">
-        <a class="btn primary" href="#start">Get started</a>
+        <div class="dl" data-dl><a class="btn primary dl-main" href="https://github.com/SetZero/sysml-studio/releases/latest"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Download</span></a></div>
         <a class="btn ghost" href="https://github.com/SetZero/sysml-studio">
           <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
           View on GitHub
         </a>
       </div>
-      <p class="meta">Built on .NET 10 and Avalonia &nbsp;·&nbsp; tested on Windows and Linux</p>
+      <p class="meta"><span data-dl-version>Free and open source</span> &nbsp;·&nbsp; Windows, macOS and Linux</p>
     </div>
-    <div class="hero-shot window">
-      <img class="for-light zoom" src="images/interconnection.png" width="1600" height="1000" alt="SysML Studio showing the interconnection diagram of a delivery drone: the flight controller wired to its battery, sensors and four motors, with the model tree on the left and the inspector on the right.">
-      <img class="for-dark zoom" src="images/interconnection-dark.png" width="1600" height="1000" alt="The same interconnection diagram of a delivery drone, in the dark theme.">
+    <div class="hero-shot">
+      <div class="window">
+        <img class="for-light zoom" src="images/interconnection.png" width="1600" height="1000" alt="SysML Studio showing the interconnection diagram of a delivery drone: the flight controller wired to its battery, sensors and four motors, with the model tree on the left and the inspector on the right.">
+        <img class="for-dark zoom" src="images/interconnection-dark.png" width="1600" height="1000" alt="The same interconnection diagram of a delivery drone, in the dark theme.">
+      </div>
     </div>
   </div>
 </header>
@@ -341,12 +367,12 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
       <div class="pillar">
         <span class="num">01</span>
         <h3>Lossless edits</h3>
-        <p>An edit rewrites only the tokens it has to. Comments, <code>doc</code> blocks, blank lines and your formatting survive, so a diff shows exactly what changed.</p>
+        <p>An edit changes only what it has to. Comments, <code>doc</code> blocks, blank lines and your formatting survive, so a diff shows exactly what changed.</p>
       </div>
       <div class="pillar">
         <span class="num">02</span>
         <h3>Nothing to import</h3>
-        <p>Point it at a folder. Every file is parsed with the SysML v2 grammar, names resolve across files, and the whole model is ready to browse.</p>
+        <p>Point it at a folder and the whole model is there: every file, every cross-reference, ready to browse. No import step, no conversion.</p>
       </div>
       <div class="pillar">
         <span class="num">03</span>
@@ -449,8 +475,8 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
         <h2>Change the model. Get a clean diff.</h2>
         <p>Rename, retype, add, delete, specialize, mark maturity or write a doc comment&nbsp;— from the tree, the inspector or a right-click on the canvas. Every dialog says what it will change before it writes a thing.</p>
         <div class="diff" aria-label="The diff a rename produces">
-          <div class="file"><span>structure.sysml</span><span>rename FlightController → Autopilot</span></div>
-<pre><span class="c">     #implemented</span><span class="d">-    part def &lt;'D.2'&gt; FlightController {</span><span class="a">+    part def &lt;'D.2'&gt; Autopilot {</span><span class="c">         doc /* Runs the attitude and navigation loops. */</span><span class="c">  …</span><span class="d">-        part fc : FlightController;</span><span class="a">+        part fc : Autopilot;</span></pre>
+          <div class="file"><span>structure.sysml</span><span>2 lines changed</span></div>
+<pre><span class="c">     #implemented</span><span class="d">-    part def &lt;'D.2'&gt; FlightController {</span><span class="a">+    part def &lt;'D.2'&gt; Autopilot {</span><span class="c">  …</span><span class="d">-        part fc : FlightController;</span><span class="a">+        part fc : Autopilot;</span></pre>
         </div>
       </div>
       <div class="window"><img class="for-light zoom" loading="lazy" src="images/rename.png" width="1600" height="1000" alt="The rename dialog: renaming FlightController to Autopilot updates 2 references in 1 file, and formatting and comments stay as they are.">
@@ -461,7 +487,7 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
       <div class="copy">
         <span class="eyebrow">Drawing</span>
         <h2>Draw relations between two boxes.</h2>
-        <p>The toolbar under each diagram adds elements and draws relations by clicking the two ends. What you draw is written as SysML text, re-parsed, and only accepted when it parses.</p>
+        <p>The toolbar under each diagram adds elements and draws relations by clicking the two ends. What you draw is written as SysML text and checked before it is accepted, so a drawing never leaves your model broken.</p>
         <ul class="checks">
           <li>connect, flow, succession, transition</li>
           <li>satisfy, dependency, allocate</li>
@@ -473,7 +499,6 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
         <div class="file">structure.sysml</div>
 <pre><span class="k">#implemented</span>
 <span class="k">part def</span> &lt;'D.0'&gt; Drone {
-    <span class="k">doc</span> <span class="m">/* A quadcopter that carries one parcel to a doorstep and back. */</span>
     <span class="k">part</span> battery : Battery;
     <span class="k">part</span> fc : FlightController;
     <span class="k">part</span> imu : Imu;
@@ -492,7 +517,7 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
       <div class="copy">
         <span class="eyebrow">Source</span>
         <h2>The text is always one click away.</h2>
-        <p>Open any file in a source tab with SysML highlighting. Type freely: the file is re-parsed as you go, errors appear inline and in the problems list, and diagram edits wait until it parses again.</p>
+        <p>Open any file in a source tab with SysML highlighting. Type freely: mistakes show up as you type, inline and in the problems list, and the diagrams wait until the file is valid again.</p>
         <ul class="checks">
           <li>Find every usage of an element, across files</li>
           <li>Jump from any box or problem to its line</li>
@@ -506,7 +531,7 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
     <div class="grid4">
       <div class="mini">
         <h3>SysML v2 JSON and XMI</h3>
-        <p>Export the whole workspace in the standard interchange formats, through SysML2.NET.</p>
+        <p>Export the whole model in the standard SysML v2 interchange formats.</p>
       </div>
       <div class="mini">
         <h3>SVG and PNG diagrams</h3>
@@ -518,7 +543,7 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
       </div>
       <div class="mini">
         <h3>Light and dark</h3>
-        <p>Two calm themes set in IBM Plex, with side panels of frosted glass over the canvas.</p>
+        <p>Two calm themes, with side panels of frosted glass over the canvas.</p>
       </div>
     </div>
   </div>
@@ -547,60 +572,31 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
   </div>
 </section>
 
-<section id="built" style="padding-top:0">
+<section id="download" style="padding-top:0">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow">Built on solid ground</span>
-      <h2>Standard parts, carefully joined.</h2>
-      <p>Nothing here reimplements what a good library already does.</p>
+      <span class="eyebrow">Download</span>
+      <h2>Free for Windows, macOS and Linux.</h2>
+      <p>One download, nothing else to install. A sample model comes with it, so there is something to open straight away.</p>
+      <div style="margin-top:28px"><div class="dl" data-dl><a class="btn primary dl-main" href="https://github.com/SetZero/sysml-studio/releases/latest"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Download</span></a></div></div>
     </div>
-    <div class="stack">
-      <a href="https://github.com/antlr/grammars-v4/tree/master/sysml-v2">
-        <span class="what">Grammar</span>
-        <div class="name">ANTLR SysML v2</div>
-        <p>The community grammar, generated to C# at build time. Edits go through its token stream rewriter.</p>
-      </a>
-      <a href="https://github.com/STARIONGROUP/SysML2.NET">
-        <span class="what">Interchange</span>
-        <div class="name">SysML2.NET</div>
-        <p>The SysML v2 metamodel with its JSON and XMI serializers.</p>
-      </a>
-      <a href="https://github.com/microsoft/automatic-graph-layout">
-        <span class="what">Layout</span>
-        <div class="name">MSAGL</div>
-        <p>Microsoft's automatic graph layout places boxes and routes edges.</p>
-      </a>
-      <a href="https://avaloniaui.net">
-        <span class="what">Interface</span>
-        <div class="name">Avalonia</div>
-        <p>One native UI on Windows, Linux and macOS, with Nodify for the canvas.</p>
-      </a>
-    </div>
-  </div>
-</section>
-
-<section id="start" style="padding-top:0">
-  <div class="wrap start">
-    <div>
-      <span class="eyebrow">Get started</span>
-      <h2 style="margin-top:14px">Up and running in three steps.</h2>
-      <ol class="steps">
-        <li><b>Install the .NET 10 SDK and a JDK.</b><p>ANTLR generates the parser at build time; if there is no JDK, the build downloads one.</p></li>
-        <li><b>Clone and build.</b><p>One solution, no other setup.</p></li>
-        <li><b>Open a folder of <code>.sysml</code> files.</b><p>Or start without one and pick a folder, a recent one, or the sample model.</p></li>
-      </ol>
-    </div>
-    <div class="terminal" role="figure" aria-label="Commands to build and run SysML Studio">
-      <div class="bar"><i></i><i></i><i></i></div>
-<pre><span class="p">$ </span>git clone https://github.com/SetZero/sysml-studio
-<span class="p">$ </span>cd sysml-studio
-<span class="p">$ </span>dotnet build SysmlStudio.slnx
-
-<span class="c"># open the drone sample shown on this page</span>
-<span class="p">$ </span>dotnet run --project src/SysmlStudio.App -- samples/drone
-
-<span class="c"># or your own model</span>
-<span class="p">$ </span>dotnet run --project src/SysmlStudio.App -- path/to/model</pre>
+    <div class="install">
+      <div data-os="windows">
+        <h3>Windows</h3>
+        <p>Unzip and run <b>SysML Studio.exe</b>.</p>
+        <p>Windows may not know the publisher yet: choose <i>More info</i>, then <i>Run anyway</i>.</p>
+      </div>
+      <div data-os="macos">
+        <h3>macOS</h3>
+        <p>Unzip and drag <b>SysML Studio</b> to Applications.</p>
+        <p>The first time, right-click it and choose <i>Open</i>.</p>
+      </div>
+      <div data-os="linux">
+        <h3>Linux</h3>
+        <p>On Debian or Ubuntu, install the package and start it from the menu:</p>
+        <pre class="cmd">sudo apt install ./sysml-studio_amd64.deb</pre>
+        <p>Anywhere else: unpack the archive and run <code>sysml-studio</code>.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -608,7 +604,7 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
 <footer>
   <div class="wrap">
     <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>SysML Studio</a>
-    <span>MIT licence · screenshots rendered from the real application by <code>tools/Screenshots</code>.</span>
+    <span>Free and open source under the MIT licence.</span>
     <a href="https://github.com/SetZero/sysml-studio">github.com/SetZero/sysml-studio</a>
   </div>
 </footer>
@@ -649,6 +645,165 @@ dialog.lightbox img { max-width: 96vw; max-height: 94vh; border-radius: 8px; cur
       select(t); t.focus(); e.preventDefault();
     });
   });
+
+  // Downloads. The names never change between releases, so the links go
+  // to releases/latest/download/<name>; the API only adds version and size.
+  var releases = "https://github.com/SetZero/sysml-studio/releases/latest";
+  var packages = [
+    { os: "windows", arch: "x64", name: "SysML-Studio-windows-x64.zip", label: "x64 · .zip" },
+    { os: "windows", arch: "arm64", name: "SysML-Studio-windows-arm64.zip", label: "ARM64 · .zip" },
+    { os: "macos", arch: "arm64", name: "SysML-Studio-macos-arm64.zip", label: "Apple silicon · .zip" },
+    { os: "macos", arch: "x64", name: "SysML-Studio-macos-x64.zip", label: "Intel · .zip" },
+    { os: "linux", arch: "x64", name: "sysml-studio_amd64.deb", label: "x64 · .deb for Debian, Ubuntu" },
+    { os: "linux", arch: "x64", name: "SysML-Studio-linux-x64.tar.gz", label: "x64 · .tar.gz" },
+    { os: "linux", arch: "arm64", name: "sysml-studio_arm64.deb", label: "ARM64 · .deb for Debian, Ubuntu" },
+    { os: "linux", arch: "arm64", name: "SysML-Studio-linux-arm64.tar.gz", label: "ARM64 · .tar.gz" }
+  ];
+  var osNames = { windows: "Windows", macos: "macOS", linux: "Linux" };
+
+  function detect() {
+    var ua = navigator.userAgent;
+    var data = navigator.userAgentData;
+    var platform = (data && data.platform) || navigator.platform || "";
+    var touchMac = /Mac/.test(platform) && navigator.maxTouchPoints > 1;
+    if ((data && data.mobile) || /Android|iPhone|iPad|iPod/.test(ua) || touchMac) return { os: null };
+    var os = /Win/i.test(platform + ua) ? "windows"
+      : /Mac/i.test(platform) ? "macos"
+      : /Linux|X11|CrOS/i.test(platform + ua) ? "linux" : null;
+    // Most Macs sold today are Apple silicon, and Safari does not say.
+    var arch = os === "macos" || /aarch64|arm64/i.test(ua) ? "arm64" : "x64";
+    return { os: os, arch: arch, deb: /Ubuntu|Debian|Mint|Pop!_OS/i.test(ua) };
+  }
+
+  function pick(system) {
+    var fits = packages.filter(function (p) { return p.os === system.os && p.arch === system.arch; });
+    if (system.os === "linux" && !system.deb) fits.reverse(); // the tarball runs anywhere
+    return fits[0] || null;
+  }
+
+  var system = detect();
+  var sizes = {};
+  var buttons = [];
+
+  function mb(bytes) { return Math.round(bytes / 1048576) + " MB"; }
+
+  function paint() {
+    var chosen = pick(system);
+    buttons.forEach(function (b) {
+      b.main.href = chosen ? b.base + chosen.name : releases;
+      b.text.textContent = chosen ? "Download for " + osNames[chosen.os] : "Download";
+      b.items.forEach(function (item) {
+        item.link.setAttribute("aria-current", chosen && item.pkg === chosen ? "true" : "false");
+        item.size.textContent = sizes[item.pkg.name] ? mb(sizes[item.pkg.name]) : "";
+      });
+    });
+    document.querySelectorAll(".install [data-os]").forEach(function (card) {
+      card.classList.toggle("mine", card.getAttribute("data-os") === system.os);
+    });
+  }
+
+  function closeAll(except) {
+    buttons.forEach(function (b) {
+      if (b === except) return;
+      b.menu.hidden = true;
+      b.more.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  document.querySelectorAll("[data-dl]").forEach(function (host, n) {
+    var main = host.querySelector(".dl-main");
+    var b = { main: main, text: main.querySelector("span"), base: releases + "/download/", items: [] };
+
+    var more = document.createElement("button");
+    more.type = "button";
+    more.className = "btn primary dl-more";
+    more.setAttribute("aria-haspopup", "true");
+    more.setAttribute("aria-expanded", "false");
+    more.setAttribute("aria-label", "Other systems and formats");
+    more.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+    var menu = document.createElement("div");
+    menu.className = "dl-menu";
+    menu.id = "dl-menu-" + n;
+    menu.hidden = true;
+    more.setAttribute("aria-controls", menu.id);
+
+    ["windows", "macos", "linux"].forEach(function (os) {
+      var group = document.createElement("div");
+      group.className = "group";
+      group.textContent = osNames[os];
+      menu.appendChild(group);
+      packages.filter(function (p) { return p.os === os; }).forEach(function (pkg) {
+        var link = document.createElement("a");
+        link.href = b.base + pkg.name;
+        var label = document.createElement("span");
+        label.textContent = pkg.label;
+        var size = document.createElement("span");
+        size.className = "size";
+        link.appendChild(label);
+        link.appendChild(size);
+        menu.appendChild(link);
+        b.items.push({ pkg: pkg, link: link, size: size });
+      });
+    });
+    var all = document.createElement("a");
+    all.className = "all";
+    all.href = releases;
+    all.textContent = "Release notes and checksums →";
+    menu.appendChild(all);
+
+    more.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var open = menu.hidden;
+      closeAll(b);
+      menu.hidden = !open;
+      more.setAttribute("aria-expanded", String(open));
+      if (open && e.detail === 0) { var first = menu.querySelector("a"); if (first) first.focus(); }
+    });
+    menu.addEventListener("keydown", function (e) {
+      var links = Array.prototype.slice.call(menu.querySelectorAll("a"));
+      var i = links.indexOf(document.activeElement);
+      if (e.key === "ArrowDown") { links[(i + 1) % links.length].focus(); e.preventDefault(); }
+      if (e.key === "ArrowUp") { links[(i - 1 + links.length) % links.length].focus(); e.preventDefault(); }
+    });
+
+    b.more = more;
+    b.menu = menu;
+    host.appendChild(more);
+    host.appendChild(menu);
+    buttons.push(b);
+  });
+
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest || !e.target.closest(".dl-menu")) closeAll(null);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    buttons.forEach(function (b) {
+      if (!b.menu.hidden) { closeAll(null); b.more.focus(); }
+    });
+  });
+
+  paint();
+
+  // Windows and Linux on ARM say so only through the high-entropy hints.
+  if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && system.os && system.os !== "macos") {
+    navigator.userAgentData.getHighEntropyValues(["architecture"]).then(function (v) {
+      if (v.architecture === "arm") { system.arch = "arm64"; paint(); }
+    }).catch(function () { /* keep x64 */ });
+  }
+
+  fetch("https://api.github.com/repos/SetZero/sysml-studio/releases/latest")
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function (release) {
+      (release.assets || []).forEach(function (a) { sizes[a.name] = a.size; });
+      var chosen = pick(system);
+      var text = "Version " + String(release.tag_name).replace(/^v/, "");
+      if (chosen && sizes[chosen.name]) text += " · " + mb(sizes[chosen.name]);
+      document.querySelectorAll("[data-dl-version]").forEach(function (el) { el.textContent = text; });
+      paint();
+    })
+    .catch(function () { /* the links work without it */ });
 
   var box = document.getElementById("lightbox");
   var big = box.querySelector("img");
