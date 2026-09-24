@@ -11,6 +11,7 @@
   <img src="https://img.shields.io/badge/.NET-10-512BD4" alt=".NET 10">
   <img src="https://img.shields.io/badge/Avalonia-12-8B44AC" alt="Avalonia 12">
   <img src="https://img.shields.io/badge/SysML-v2-4a6a9c" alt="SysML v2">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-2f7a4b" alt="MIT licence"></a>
 </p>
 
 <p align="center">
@@ -185,3 +186,8 @@ The website is `docs/index.html`, served by GitHub Pages from `docs/` on
 A commit message is a subject, a blank line, and a body that argues the why.
 No `Co-authored-by:` trailer, no "Generated with" line, no tool signature —
 one author per commit.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE). The vendored grammar in `grammar/` is MIT too;
+the bundled IBM Plex fonts are under the SIL Open Font Licence.
