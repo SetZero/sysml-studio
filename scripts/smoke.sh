@@ -26,7 +26,8 @@ start() {
     [ -e "$program" ] || { echo "==> $what: $program is not there" >&2; exit 1; }
     [ -d "$model" ] || { echo "==> $what: $model is not there" >&2; exit 1; }
     if [ "$os" = linux ] && [ -z "${DISPLAY:-}" ]; then launcher=(xvfb-run -a); fi
-    "${launcher[@]}" "$program" "$model" > "$log" 2>&1 &
+    # ${a[@]+...}: macOS's bash 3.2 calls an empty array unbound under set -u.
+    ${launcher[@]+"${launcher[@]}"} "$program" "$model" > "$log" 2>&1 &
     local pid=$!
     sleep 15
     if kill -0 "$pid" 2>/dev/null; then
