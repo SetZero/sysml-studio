@@ -11,9 +11,13 @@
 # nothing has to be installed first. The file names carry no version: the
 # website links to releases/latest/download/<name>, which must not move.
 #
-#   win-*    SysML-Studio-windows-<arch>.zip
-#   linux-*  SysML-Studio-linux-<arch>.tar.gz and sysml-studio_<debarch>.deb
-#   osx-*    SysML-Studio-macos-<arch>.zip holding SysML Studio.app
+#   win-*    SysML-Studio-windows-<arch>.msi (needs WiX 5) and .zip
+#   linux-*  sysml-studio_<debarch>.deb, sysml-studio-<rpmarch>.rpm (needs
+#            rpmbuild) and SysML-Studio-linux-<arch>.tar.gz
+#   osx-*    SysML-Studio-macos-<arch>.pkg and a .zip of SysML Studio.app
+#
+# Every one carries the sample models. On CI a missing tool is an error;
+# elsewhere that installer is left out.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -62,6 +66,24 @@ win)
     rm -f "$out/$name"
     zip_dir "$work/pkg" "SysML Studio" "$out/$name"
     echo "$out/$name"
+
+    # The installer: Program Files, the Start menu, Apps & features.
+    if command -v wix >/dev/null; then
+        appdir="$work/pkg/SysML Studio"
+        command -v cygpath >/dev/null && appdir="$(cygpath -w "$appdir")"
+        name="SysML-Studio-windows-$arch.msi"
+        # An MSI version is numbers only: 0.2.0-dev.7 installs as 0.2.0.
+        wix build installer/windows/SysmlStudio.wxs -arch "$arch" \
+            -d Version="${version%%-*}" -d AppDir="$appdir" \
+            -ext WixToolset.UI.wixext -o "$out/$name"
+        rm -f "$out/${name%.msi}.wixpdb"
+        echo "$out/$name"
+    elif [ -n "${CI:-}" ]; then
+        echo "wix is not installed: cannot build the .msi" >&2
+        exit 1
+    else
+        echo "wix is not installed: no .msi (dotnet tool install --global wix --version 5.0.2)" >&2
+    fi
     ;;
 
 linux)
@@ -93,7 +115,11 @@ Keywords=SysML;MBSE;model;diagram;"
              "$deb/usr/share/icons/hicolor/512x512/apps" "$deb/usr/share/doc/sysml-studio"
     cp -r "$work/app" "$deb/opt/sysml-studio"
     mv "$deb/opt/sysml-studio/SysmlStudio.App" "$deb/opt/sysml-studio/sysml-studio"
-    ln -s /opt/sysml-studio/sysml-studio "$deb/usr/bin/sysml-studio"
+    # A launcher, not a link: the program finds its samples beside itself.
+    cat > "$deb/usr/bin/sysml-studio" <<'EOF'
+#!/bin/sh
+exec /opt/sysml-studio/sysml-studio "$@"
+EOF
     printf '%s\n' "$desktop" > "$deb/usr/share/applications/sysml-studio.desktop"
     cp "$icon" "$deb/usr/share/icons/hicolor/512x512/apps/sysml-studio.png"
     cp LICENSE "$deb/usr/share/doc/sysml-studio/copyright"
@@ -112,10 +138,52 @@ Description: Graphical viewer and editor for SysML v2 models
  diagrams and change it. Every edit is a minimal patch over the text.
 EOF
     chmod -R u=rwX,go=rX "$deb"
-    chmod 755 "$deb/opt/sysml-studio/sysml-studio"
+    chmod 755 "$deb/opt/sysml-studio/sysml-studio" "$deb/usr/bin/sysml-studio"
     name="sysml-studio_$debarch.deb"
     dpkg-deb --root-owner-group --build "$deb" "$out/$name" >/dev/null
     echo "$out/$name"
+
+    # The RPM package, for Fedora, openSUSE and the like: the same files.
+    case "$arch" in x64) rpmarch=x86_64 ;; arm64) rpmarch=aarch64 ;; esac
+    if command -v rpmbuild >/dev/null; then
+        rm -rf "$deb/DEBIAN"
+        mkdir -p "$work/rpm/SPECS"
+        cat > "$work/rpm/SPECS/sysml-studio.spec" <<EOF
+Name: sysml-studio
+Version: ${version//-/\~}
+Release: 1
+Summary: Graphical viewer and editor for SysML v2 models
+License: MIT
+URL: https://setzero.github.io/sysml-studio/
+Requires: fontconfig, libX11, libICE, libSM
+AutoReqProv: no
+# The program is one bundle: stripping or splitting it would break it.
+%global __os_install_post %{nil}
+%global debug_package %{nil}
+%define _build_id_links none
+
+%description
+Open a folder of .sysml files, browse the model as a tree, read it as
+diagrams and change it. Every edit is a minimal patch over the text.
+
+%install
+cp -a "$deb/." %{buildroot}/
+
+%files
+/opt/sysml-studio
+/usr/bin/sysml-studio
+/usr/share/applications/sysml-studio.desktop
+/usr/share/icons/hicolor/512x512/apps/sysml-studio.png
+%license /usr/share/doc/sysml-studio/copyright
+EOF
+        rpmbuild -bb --quiet --target "$rpmarch" --define "_topdir $work/rpm" "$work/rpm/SPECS/sysml-studio.spec"
+        name="sysml-studio-$rpmarch.rpm"
+        cp "$work/rpm/RPMS/$rpmarch/"*.rpm "$out/$name"
+        echo "$out/$name"
+    elif [ -n "${CI:-}" ]; then
+        echo "rpmbuild is not installed: cannot build the .rpm" >&2
+        exit 1
+    fi
     ;;
 
 osx)
@@ -153,6 +221,26 @@ EOF
         zip_dir "$work/pkg" "SysML Studio.app" "$out/$name"
     fi
     echo "$out/$name"
+
+    # The installer: puts SysML Studio.app in /Applications, after the licence.
+    if command -v pkgbuild >/dev/null; then
+        pkgbuild --analyze --root "$work/pkg" "$work/components.plist" >/dev/null
+        # Install where it says, not over a copy of the app found elsewhere.
+        plutil -replace 0.BundleIsRelocatable -bool NO "$work/components.plist"
+        pkgbuild --quiet --root "$work/pkg" --component-plist "$work/components.plist" \
+            --identifier io.github.setzero.sysml-studio --version "$version" \
+            --install-location /Applications "$work/sysml-studio.pkg"
+        mkdir -p "$work/resources"
+        cp LICENSE "$work/resources/LICENSE.txt"
+        productbuild --synthesize --package "$work/sysml-studio.pkg" "$work/distribution.xml"
+        sed -i '' 's|<installer-gui-script minSpecVersion="[0-9]*">|&\
+    <title>SysML Studio</title>\
+    <license file="LICENSE.txt"/>|' "$work/distribution.xml"
+        name="SysML-Studio-macos-$arch.pkg"
+        productbuild --quiet --distribution "$work/distribution.xml" --resources "$work/resources" \
+            --package-path "$work" "$out/$name"
+        echo "$out/$name"
+    fi
     ;;
 
 *)

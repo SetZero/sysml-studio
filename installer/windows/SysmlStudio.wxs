@@ -1,0 +1,56 @@
+<!--
+  The Windows installer. scripts/package.sh builds it with WiX 5:
+
+    wix build installer/windows/SysmlStudio.wxs -arch x64
+        -d Version=1.2.3 -d AppDir=<published folder> -ext WixToolset.UI.wixext
+
+  AppDir holds "SysML Studio.exe", LICENSE and the samples folder. The
+  UpgradeCode never changes: it is how a newer installer finds and replaces
+  an older installation.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="SysML Studio"
+           Manufacturer="SetZero"
+           Version="$(Version)"
+           UpgradeCode="6EF36AD6-D0FE-45F6-AB51-4A955C6CB922"
+           Scope="perMachine"
+           Compressed="yes">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of SysML Studio is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="SysmlStudio.ico" SourceFile="src\SysmlStudio.App\Assets\Icon\sysml-studio.ico" />
+    <Property Id="ARPPRODUCTICON" Value="SysmlStudio.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://setzero.github.io/sysml-studio/" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/SetZero/sysml-studio" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="SysML Studio" />
+    </StandardDirectory>
+
+    <!-- The program, with its Start menu entry. -->
+    <Component Id="Program" Directory="INSTALLFOLDER">
+      <File Id="SysmlStudioExe" Source="$(AppDir)\SysML Studio.exe" KeyPath="yes">
+        <Shortcut Id="StartMenu" Name="SysML Studio" Description="Draw and edit SysML v2 models"
+                  Directory="ProgramMenuFolder" WorkingDirectory="INSTALLFOLDER"
+                  Icon="SysmlStudio.ico" Advertise="yes" />
+      </File>
+    </Component>
+
+    <!-- Everything else it ships with: the licence and the sample models. -->
+    <ComponentGroup Id="Payload" Directory="INSTALLFOLDER">
+      <Files Include="$(AppDir)\**">
+        <Exclude Files="$(AppDir)\SysML Studio.exe" />
+      </Files>
+    </ComponentGroup>
+
+    <Feature Id="Main" Title="SysML Studio">
+      <ComponentRef Id="Program" />
+      <ComponentGroupRef Id="Payload" />
+    </Feature>
+
+    <ui:WixUI Id="WixUI_Minimal" />
+    <WixVariable Id="WixUILicenseRtf" Value="installer\windows\License.rtf" />
+  </Package>
+</Wix>

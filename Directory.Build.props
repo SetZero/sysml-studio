@@ -9,7 +9,7 @@
 
     <!-- The version a local build carries. A release overrides it with the
          tag it is built from (v0.2.0 builds 0.2.0); see scripts/package.sh. -->
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.2.0</VersionPrefix>
     <Product>SysML Studio</Product>
     <Copyright>Copyright (c) 2026 Sebastian Dauenhauer</Copyright>
 

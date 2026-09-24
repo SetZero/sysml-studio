@@ -28,10 +28,8 @@ public sealed partial class WelcomeViewModel : CommunityToolkit.Mvvm.ComponentMo
 
     public bool HasRecent => Recent.Count > 0;
 
-    /// <summary>The sample model shipped beside the application, if it is there.</summary>
-    public static string SamplePath => Path.Combine(AppContext.BaseDirectory, "samples", "vehicle");
-
-    public static bool HasSample => Directory.Exists(SamplePath);
+    /// <summary>Whether a sample model was shipped beside the application.</summary>
+    public static bool HasSample => Samples.Has(Samples.Default);
 
     public void Refresh()
     {
@@ -48,5 +46,5 @@ public sealed partial class WelcomeViewModel : CommunityToolkit.Mvvm.ComponentMo
     private void OpenRecent(RecentFolder folder) => _shell.Open(folder.Path);
 
     [RelayCommand]
-    private void OpenSample() => _shell.Open(SamplePath);
+    private void OpenSample() => _shell.Open(Samples.Prepare(Samples.Default));
 }

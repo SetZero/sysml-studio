@@ -42,6 +42,17 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Install the installer tools
+        run: |
+          case "$RUNNER_OS" in
+          Windows)
+            dotnet tool install --global wix --version 5.0.2
+            echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+            "$HOME/.dotnet/tools/wix" extension add -g WixToolset.UI.wixext/5.0.2 ;;
+          Linux)
+            sudo apt-get update && sudo apt-get install -y rpm ;;
+          esac
+
       - name: Version
         run: |
           declared="$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)"
@@ -61,9 +72,9 @@ jobs:
 
       - name: Install a display server
         if: matrix.smoke && runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+        run: sudo apt-get install -y xvfb
 
-      - name: Start it
+      - name: Install it and start it
         if: matrix.smoke
         run: scripts/smoke.sh ${{ matrix.rid }} artifacts/packages
 
@@ -97,21 +108,20 @@ jobs:
           cat > notes.md <<'EOF'
           ## Download
 
-          | System | Package |
-          |---|---|
-          | Windows | `SysML-Studio-windows-x64.zip` · `SysML-Studio-windows-arm64.zip` |
-          | macOS | `SysML-Studio-macos-arm64.zip` (Apple silicon) · `SysML-Studio-macos-x64.zip` (Intel) |
-          | Debian, Ubuntu | `sysml-studio_amd64.deb` · `sysml-studio_arm64.deb` |
-          | Other Linux | `SysML-Studio-linux-x64.tar.gz` · `SysML-Studio-linux-arm64.tar.gz` |
+          | System | Installer | Portable |
+          |---|---|---|
+          | Windows | `SysML-Studio-windows-x64.msi` · `SysML-Studio-windows-arm64.msi` | `.zip` |
+          | macOS | `SysML-Studio-macos-arm64.pkg` (Apple silicon) · `SysML-Studio-macos-x64.pkg` (Intel) | `.zip` |
+          | Debian, Ubuntu | `sysml-studio_amd64.deb` · `sysml-studio_arm64.deb` | `.tar.gz` |
+          | Fedora, openSUSE | `sysml-studio-x86_64.rpm` · `sysml-studio-aarch64.rpm` | `.tar.gz` |
 
-          Nothing else needs to be installed.
+          Nothing else needs to be installed, and the sample models come with it: *Try sample* on the start page opens a copy in your documents.
 
-          - **Windows:** unzip and run `SysML Studio.exe`. The build is not signed yet, so SmartScreen may ask: choose *More info* → *Run anyway*.
-          - **macOS:** unzip and move *SysML Studio* to Applications. It is not notarized yet: the first time, right-click it and choose *Open*.
-          - **Debian and Ubuntu:** `sudo apt install ./sysml-studio_amd64.deb`, then start *SysML Studio* from the menu or `sysml-studio` from a terminal.
-          - **Other Linux:** unpack and run `sysml-studio/sysml-studio`.
-
-          A sample model comes with it: open the `samples/drone` folder next to the program.
+          - **Windows:** run the `.msi`. It is not signed yet, so SmartScreen may ask: choose *More info* → *Run anyway*.
+          - **macOS:** open the `.pkg`. It is not notarized yet: the first time, right-click it and choose *Open*.
+          - **Debian and Ubuntu:** `sudo apt install ./sysml-studio_amd64.deb`
+          - **Fedora and openSUSE:** `sudo dnf install ./sysml-studio-x86_64.rpm`
+          - **Anywhere else:** unpack the `.zip` or `.tar.gz` and run it from there.
 
           EOF
           gh release create "$GITHUB_REF_NAME" packages/* \
