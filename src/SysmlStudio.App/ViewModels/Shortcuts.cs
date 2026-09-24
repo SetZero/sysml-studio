@@ -52,6 +52,7 @@ public static class ShortcutCatalog
         new("problems", "Navigate", "Show or hide problems", "Ctrl+Shift+M", s => Run(s.ToggleProblemsCommand)),
 
         // Diagram
+        new("kindText", "Diagram", "Text", "Alt+D0", s => s.SwitchTo(null)),
         new("kindDefinition", "Diagram", "Definition diagram", "Alt+D1", s => s.SwitchTo(DiagramKind.Definition)),
         new("kindInterconnection", "Diagram", "Interconnection diagram", "Alt+D2", s => s.SwitchTo(DiagramKind.Interconnection)),
         new("kindRequirements", "Diagram", "Requirements diagram", "Alt+D3", s => s.SwitchTo(DiagramKind.Requirements)),

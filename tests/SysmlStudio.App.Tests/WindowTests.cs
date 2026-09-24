@@ -168,13 +168,49 @@ public sealed class WindowTests
         Assert.True(source.HasDot);
         Assert.Equal("Unexpected end of file", source.ErrorMessage);
         Assert.True(shell.ErrorCount > 0);
-        Assert.False(shell.ShowsKinds); // the switcher is for diagrams
+        Assert.True(shell.DiagramKinds.Single(k => k.Kind is null).IsActive); // the switcher shows "Text" over a source tab
 
         shell.ToggleProblemsCommand.Execute(null);
         Settle();
         Shoot(window, "problems");
         Assert.True(shell.Bottom.IsOpen);
         Assert.True(shell.Bottom.ShowsProblems);
+    }
+
+    /// <summary>
+    /// Browsing with nothing open shows each element's text, in one tab; the
+    /// switcher draws it as a diagram in that same tab, and browsing then
+    /// keeps drawing diagrams.
+    /// </summary>
+    [AvaloniaFact]
+    public void BrowsingShowsTheTextThenTheSwitcherDrawsIt()
+    {
+        var (_, shell) = Open(Fixture);
+        var switcher = shell.DiagramKinds;
+        Assert.Equal("Text", switcher[0].Label);
+
+        shell.Select(shell.Workspace!.Find("Sample::Engine")!);
+        Settle();
+        var text = Assert.IsType<SourceDocumentViewModel>(shell.ActiveDocument);
+        Assert.Equal(shell.Workspace.Find("Sample::Engine")!.File.Path, text.Path);
+        Assert.True(switcher[0].IsActive);
+        Assert.True(switcher[0].IsAvailable);
+
+        shell.Select(shell.Workspace.Find("Sample")!);
+        Settle();
+        Assert.Single(shell.Documents);
+        Assert.IsType<SourceDocumentViewModel>(shell.ActiveDocument);
+
+        shell.SwitchKindCommand.Execute(switcher.Single(k => k.Kind == DiagramKind.Definition));
+        Settle();
+        Assert.Single(shell.Documents);
+        Assert.IsType<DiagramDocumentViewModel>(shell.ActiveDocument);
+        Assert.False(switcher[0].IsActive);
+
+        shell.SwitchKindCommand.Execute(switcher[0]);
+        Settle();
+        Assert.Single(shell.Documents);
+        Assert.IsType<SourceDocumentViewModel>(shell.ActiveDocument);
     }
 
     /// <summary>The parser's messages, as the error box and the problems list word them.</summary>
@@ -195,6 +231,66 @@ public sealed class WindowTests
         Assert.Contains("requirement", keywords);
         Assert.Contains("satisfy", keywords);
         Assert.True(keywords.Count > 100, $"only {keywords.Count} keywords");
+    }
+
+    /// <summary>Typing a type's first letters in the editor opens the list, and Tab takes the suggestion.</summary>
+    [AvaloniaFact]
+    public void TheEditorCompletesWhatIsTyped()
+    {
+        var (window, shell) = Open(Fixture);
+        shell.OpenSource(shell.Workspace!.Files.First().Path);
+        Settle();
+
+        var editor = window.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Single();
+        var line = editor.Document.GetLineByNumber(23); // "        part engine : Engine;" in Vehicle
+        const string typed = "\n        part spare : ";
+        editor.Document.Insert(line.EndOffset, typed);
+        editor.CaretOffset = line.EndOffset + typed.Length;
+        editor.TextArea.Focus();
+        window.KeyTextInput("V");
+        window.KeyTextInput("e");
+        window.KeyTextInput("h");
+        Settle();
+        Shoot(window, "completion");
+
+        var list = window.GetVisualDescendants().OfType<AvaloniaEdit.CodeCompletion.CompletionList>().SingleOrDefault()
+                   ?? Avalonia.LogicalTree.LogicalExtensions.GetLogicalDescendants(window)
+                       .OfType<AvaloniaEdit.CodeCompletion.CompletionList>().SingleOrDefault();
+        Assert.NotNull(list);
+        Assert.Equal("Vehicle", list.SelectedItem?.Text);
+
+        window.KeyPress(Avalonia.Input.Key.Tab, Avalonia.Input.RawInputModifiers.None, Avalonia.Input.PhysicalKey.Tab, "\t");
+        Settle();
+        Assert.Contains("part spare : Vehicle", editor.Document.Text, StringComparison.Ordinal);
+    }
+
+    /// <summary>Keywords, type names and numbers each get their own colour; a declared name keeps the text colour.</summary>
+    [AvaloniaFact]
+    public void TheSourceColoursKeywordsTypesAndNumbers()
+    {
+        Avalonia.Media.Color keyword = Avalonia.Media.Colors.Purple, comment = Avalonia.Media.Colors.Gray,
+            text = Avalonia.Media.Colors.Brown, number = Avalonia.Media.Colors.Green,
+            metadata = Avalonia.Media.Colors.Blue, type = Avalonia.Media.Colors.Teal;
+        var definition = SysmlHighlighting.Create(keyword, comment, text, number, metadata, type);
+        const string line = "part motors : Motor[4]; part def Hub :> Base::Part;";
+        var document = new AvaloniaEdit.Document.TextDocument(line);
+        var sections = new AvaloniaEdit.Highlighting.DocumentHighlighter(document, definition)
+            .HighlightLine(1).Sections;
+
+        Avalonia.Media.Color? ColourOf(string word)
+        {
+            var at = line.IndexOf(word, StringComparison.Ordinal);
+            var section = sections.LastOrDefault(s => s.Offset <= at && at < s.Offset + s.Length);
+            return (section?.Color.Foreground as AvaloniaEdit.Highlighting.SimpleHighlightingBrush)?.GetColor(null);
+        }
+
+        Assert.Equal(keyword, ColourOf("part"));
+        Assert.Equal(keyword, ColourOf("def"));
+        Assert.Equal(type, ColourOf("Motor"));
+        Assert.Equal(number, ColourOf("4"));
+        Assert.Equal(type, ColourOf("Base::Part"));
+        Assert.Null(ColourOf("motors"));
+        Assert.Null(ColourOf("Hub"));
     }
 
     [AvaloniaFact]

@@ -179,7 +179,7 @@
         <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6"
                     Margin="{Binding CanvasInsets}" IsVisible="{Binding ShowsHint}">
           <TextBlock Text="Nothing drawn yet" FontSize="18" HorizontalAlignment="Center" />
-          <TextBlock Text="Pick an element in the model, then a diagram kind above." Classes="muted" FontSize="14" />
+          <TextBlock Text="Pick an element in the model to see it." Classes="muted" FontSize="14" />
         </StackPanel>
 
         <!-- The empty state -->

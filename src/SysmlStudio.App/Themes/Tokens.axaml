@@ -48,12 +48,13 @@
       <SolidColorBrush x:Key="MaturityPlanned" Color="#B9BEC4" />
       <SolidColorBrush x:Key="MaturityNone" Color="#D2D4D6" />
 
-      <!-- Syntax colours for the source editor: quiet, mostly the text colour. -->
-      <Color x:Key="SyntaxKeyword">#1E1F21</Color>
+      <!-- Syntax colours for the source editor: muted, and each apart from the text colour. -->
+      <Color x:Key="SyntaxKeyword">#7A4AA8</Color>
       <Color x:Key="SyntaxComment">#8A8C90</Color>
       <Color x:Key="SyntaxString">#8A4F1D</Color>
-      <Color x:Key="SyntaxNumber">#1E1F21</Color>
+      <Color x:Key="SyntaxNumber">#3D7A3A</Color>
       <Color x:Key="SyntaxMetadata">#4E6D96</Color>
+      <Color x:Key="SyntaxType">#1E6F6B</Color>
     </ResourceDictionary>
 
     <ResourceDictionary x:Key="Dark">
@@ -92,11 +93,12 @@
       <SolidColorBrush x:Key="MaturityPlanned" Color="#5A6068" />
       <SolidColorBrush x:Key="MaturityNone" Color="#3F444A" />
 
-      <Color x:Key="SyntaxKeyword">#E4E5E7</Color>
+      <Color x:Key="SyntaxKeyword">#C3A2E0</Color>
       <Color x:Key="SyntaxComment">#7D8086</Color>
       <Color x:Key="SyntaxString">#D9A06A</Color>
-      <Color x:Key="SyntaxNumber">#E4E5E7</Color>
+      <Color x:Key="SyntaxNumber">#A8CF9E</Color>
       <Color x:Key="SyntaxMetadata">#9DB7D8</Color>
+      <Color x:Key="SyntaxType">#86CBC4</Color>
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>

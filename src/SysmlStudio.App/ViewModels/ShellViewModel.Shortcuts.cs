@@ -57,8 +57,8 @@ public sealed partial class ShellViewModel
         ShowDocument(Documents[(((index + step) % Documents.Count) + Documents.Count) % Documents.Count]);
     }
 
-    /// <summary>The title bar's switcher, by kind: what the Alt+number keys press.</summary>
-    public void SwitchTo(DiagramKind kind)
+    /// <summary>The title bar's switcher, by kind (null for the text): what the Alt+number keys press.</summary>
+    public void SwitchTo(DiagramKind? kind)
     {
         if (DiagramKinds.FirstOrDefault(k => k.Kind == kind) is { IsAvailable: true } option)
             SwitchKindCommand.Execute(option);

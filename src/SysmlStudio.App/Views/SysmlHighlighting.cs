@@ -21,7 +21,12 @@ public static class SysmlHighlighting
     /// <summary>The grammar's keywords: every literal token that is a plain word.</summary>
     public static IReadOnlyList<string> Keywords => KeywordList.Value;
 
-    public static IHighlightingDefinition Create(Color keyword, Color comment, Color text, Color number, Color metadata)
+    /// <summary>
+    /// The colouring, in the theme's colours. <paramref name="type"/> colours
+    /// the name after a typing or specialization (": Motor", ":> Sensor"),
+    /// the way an IDE colours the types in a declaration.
+    /// </summary>
+    public static IHighlightingDefinition Create(Color keyword, Color comment, Color text, Color number, Color metadata, Color type)
     {
         var xshd = new StringBuilder();
         xshd.Append("""<SyntaxDefinition name="SysML" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">""");
@@ -30,6 +35,7 @@ public static class SysmlHighlighting
         xshd.Append(CultureInfo.InvariantCulture, $"""<Color name="String" foreground="{Hex(text)}" />""");
         xshd.Append(CultureInfo.InvariantCulture, $"""<Color name="Number" foreground="{Hex(number)}" />""");
         xshd.Append(CultureInfo.InvariantCulture, $"""<Color name="Metadata" foreground="{Hex(metadata)}" />""");
+        xshd.Append(CultureInfo.InvariantCulture, $"""<Color name="Type" foreground="{Hex(type)}" />""");
         xshd.Append("<RuleSet>");
         xshd.Append("""<Span color="Comment" begin="//" />""");
         xshd.Append("""<Span color="Comment" multiline="true" begin="/\*" end="\*/" />""");
@@ -40,6 +46,7 @@ public static class SysmlHighlighting
             xshd.Append(CultureInfo.InvariantCulture, $"<Word>{SecurityElement.Escape(word)}</Word>");
         xshd.Append("</Keywords>");
         xshd.Append("""<Rule color="Metadata">[#@][A-Za-z_][A-Za-z0-9_]*</Rule>""");
+        xshd.Append("""<Rule color="Type">(?&lt;=(?&lt;!:):&gt;?&gt;?\s*)[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)*</Rule>""");
         xshd.Append("""<Rule color="Number">\b[0-9]+(\.[0-9]+)?\b</Rule>""");
         xshd.Append("</RuleSet></SyntaxDefinition>");
 

@@ -34,10 +34,10 @@ public abstract partial class DocumentViewModel : ObservableObject
     public string ToolTip { get; protected init; } = string.Empty;
 }
 
-/// <summary>One segment of the title bar's diagram switcher.</summary>
-public sealed partial class DiagramKindOption(DiagramKind kind, string label) : ObservableObject
+/// <summary>One segment of the title bar's switcher: a kind of diagram, or the element's text when <see cref="Kind"/> is null.</summary>
+public sealed partial class DiagramKindOption(DiagramKind? kind, string label) : ObservableObject
 {
-    public DiagramKind Kind { get; } = kind;
+    public DiagramKind? Kind { get; } = kind;
     public string Label { get; } = label;
 
     [ObservableProperty]
@@ -71,6 +71,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
         DiagramKinds =
         [
+            new(null, "Text"),
             new(DiagramKind.Definition, "Definition"),
             new(DiagramKind.Interconnection, "Interconnection"),
             new(DiagramKind.Requirements, "Requirements"),
@@ -113,8 +114,8 @@ public sealed partial class ShellViewModel : ObservableObject
     /// </summary>
     public Thickness CanvasInsets => new(ShowsSide ? SideWidth : 0, 0, ShowsInspector ? InspectorWidth : 0, 0);
 
-    /// <summary>The diagram switcher shows over diagrams, and over an empty centre with something selected.</summary>
-    public bool ShowsKinds => HasWorkspace && ActiveSource is null;
+    /// <summary>The switcher shows whenever a model is open: over diagrams, over text, and over an empty centre.</summary>
+    public bool ShowsKinds => HasWorkspace;
 
     // ----- title bar ----------------------------------------------------------
 
@@ -299,71 +300,125 @@ public sealed partial class ShellViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowsHint));
     }
 
+    /// <summary>Draws the selection as a diagram, in the tab in front when that is text nobody has typed in.</summary>
     [RelayCommand(CanExecute = nameof(CanOpenDiagram))]
     private void OpenDiagram(DiagramKind kind)
     {
         if (SelectedElement is not { } element)
             return;
 
-        ShowDocument(FindDocument($"diagram:{kind}:{element.QualifiedName}") ?? CreateDiagram(DiagramBuilder.Build(kind, element)));
+        if (FindDocument($"diagram:{kind}:{element.QualifiedName}") is { } open)
+            ShowDocument(open);
+        else if (ActiveSource is { IsDirty: false } text)
+            ReplaceDocument(text, CreateDiagram(DiagramBuilder.Build(kind, element)));
+        else
+            ShowDocument(CreateDiagram(DiagramBuilder.Build(kind, element)));
     }
 
     private bool CanOpenDiagram(DiagramKind kind)
         => SelectedElement is { } e && DiagramBuilder.KindsFor(e).Contains(kind);
 
     /// <summary>
-    /// The title bar's switcher: draws the selection — or, with nothing
-    /// selected, what the diagram in front is of — as another kind of diagram,
-    /// in the same tab.
+    /// The title bar's switcher: shows the selection — or, with nothing
+    /// selected, what the diagram in front is of — as its text or as another
+    /// kind of diagram, in the same tab.
     /// </summary>
     [RelayCommand]
     private void SwitchKind(DiagramKindOption option)
     {
         var target = SelectedElement ?? ActiveDiagram?.Diagram.Root;
-        if (target is null || !DiagramBuilder.KindsFor(target).Contains(option.Kind))
+        if (target is null || !ViewsFor(target).Contains(option.Kind))
             return;
 
-        var existing = FindDocument($"diagram:{option.Kind}:{target.QualifiedName}");
-        if (existing is not null)
+        ShowView(target, option.Kind);
+    }
+
+    /// <summary>What the switcher offers for an element, in its order: the text it is written in, then its diagrams.</summary>
+    private static List<DiagramKind?> ViewsFor(Element element)
+        => [null, .. DiagramBuilder.KindsFor(element).Select(k => (DiagramKind?)k)];
+
+    /// <summary>
+    /// Shows an element as text (<paramref name="kind"/> null) or as a
+    /// diagram: in its own tab when that is open already, otherwise in the tab
+    /// in front, so browsing does not leave a trail of tabs.
+    /// </summary>
+    private void ShowView(Element element, DiagramKind? kind)
+    {
+        if (kind is not { } diagramKind)
         {
-            ShowDocument(existing);
+            ShowText(element);
             return;
         }
 
-        var diagram = CreateDiagram(DiagramBuilder.Build(option.Kind, target));
-        if (ActiveDiagram is { } current)
+        if (FindDocument($"diagram:{diagramKind}:{element.QualifiedName}") is { } open)
+        {
+            ShowDocument(open);
+            return;
+        }
+
+        var diagram = CreateDiagram(DiagramBuilder.Build(diagramKind, element));
+        if (Replaceable is { } current)
             ReplaceDocument(current, diagram);
         else
             ShowDocument(diagram);
     }
 
+    /// <summary>The file an element is written in, scrolled to it, without taking the focus from the tree.</summary>
+    private void ShowText(Element element)
+    {
+        if (SourceFor(element.File.Path) is not { } document)
+            return;
+
+        if (Documents.Contains(document) || Replaceable is not { } current)
+            ShowDocument(document);
+        else
+            ReplaceDocument(current, document);
+        document.GoToLine(element.Line, focus: false);
+    }
+
+    /// <summary>The tab in front, when showing something else may take it over: a diagram, or text with no unsaved typing.</summary>
+    private DocumentViewModel? Replaceable => ActiveDocument switch
+    {
+        DiagramDocumentViewModel diagram => diagram,
+        SourceDocumentViewModel { IsDirty: false } text => text,
+        _ => null,
+    };
+
     private void RefreshDiagramKinds()
     {
         var target = SelectedElement ?? ActiveDiagram?.Diagram.Root;
-        var available = target is null ? [] : DiagramBuilder.KindsFor(target);
+        var available = target is null ? [] : ViewsFor(target);
         foreach (var option in DiagramKinds)
         {
-            option.IsAvailable = available.Contains(option.Kind);
-            option.IsActive = ActiveKind == option.Kind;
+            // What is in front is never greyed out, even with nothing selected to switch.
+            option.IsActive = option.Kind is null ? ActiveSource is not null : ActiveKind == option.Kind;
+            option.IsAvailable = option.IsActive || available.Contains(option.Kind);
         }
     }
 
     /// <summary>Opens a file in a source tab, at a line when one is given.</summary>
     public void OpenSource(string path, int line = 0)
     {
-        if (Workspace is not { } workspace || !File.Exists(path))
+        if (SourceFor(path) is not { } document)
             return;
-
-        if (FindDocument("source:" + path) is not SourceDocumentViewModel document)
-        {
-            var text = workspace.Files.FirstOrDefault(f => string.Equals(f.Path, path, StringComparison.OrdinalIgnoreCase))?.Text
-                ?? File.ReadAllText(path);
-            document = new SourceDocumentViewModel(this, path, workspace.RelativePath(path), text);
-        }
 
         ShowDocument(document);
         if (line > 0)
             document.GoToLine(line);
+    }
+
+    /// <summary>The source tab for a file: the open one, or a new one not yet shown.</summary>
+    private SourceDocumentViewModel? SourceFor(string path)
+    {
+        if (Workspace is not { } workspace || !File.Exists(path))
+            return null;
+
+        if (FindDocument("source:" + path) is SourceDocumentViewModel open)
+            return open;
+
+        var text = workspace.Files.FirstOrDefault(f => string.Equals(f.Path, path, StringComparison.OrdinalIgnoreCase))?.Text
+            ?? File.ReadAllText(path);
+        return new SourceDocumentViewModel(this, path, workspace.RelativePath(path), text);
     }
 
     /// <summary>Selects an element everywhere: tree, inspector, and the canvas if it is on it.</summary>
@@ -384,15 +439,20 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     /// <summary>
-    /// The diagram in front follows the selection. An element already on it is
-    /// selected there; any other element is drawn in the same tab — as the same
-    /// kind of diagram when it can be, as its first kind otherwise — so browsing
-    /// does not leave a trail of tabs.
+    /// The centre follows the selection, so browsing always shows something.
+    /// Over a diagram, an element already on it is selected there; any other
+    /// element is drawn in the same tab, as the same kind of diagram when it
+    /// can be and as its first kind otherwise, and an element with no diagram
+    /// leaves the diagram as it is. Over text, or over nothing, the element's
+    /// text is shown.
     /// </summary>
     private void FollowSelection(Element element)
     {
         if (ActiveDiagram is not { } current)
+        {
+            ShowText(element);
             return;
+        }
 
         if (current.Nodes.FirstOrDefault(n => ReferenceEquals(n.Element, element) && !n.IsPseudoNode) is { } onCanvas)
         {
@@ -405,14 +465,7 @@ public sealed partial class ShellViewModel : ObservableObject
         if (kinds.Count == 0)
             return;
 
-        var kind = kinds.Contains(current.Diagram.Kind) ? current.Diagram.Kind : kinds[0];
-        if (FindDocument($"diagram:{kind}:{element.QualifiedName}") is { } open)
-        {
-            ShowDocument(open);
-            return;
-        }
-
-        ReplaceDocument(current, CreateDiagram(DiagramBuilder.Build(kind, element)));
+        ShowView(element, kinds.Contains(current.Diagram.Kind) ? current.Diagram.Kind : kinds[0]);
     }
 
     partial void OnActiveDocumentChanged(DocumentViewModel? oldValue, DocumentViewModel? newValue)

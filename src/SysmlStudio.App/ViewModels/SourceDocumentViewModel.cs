@@ -53,8 +53,11 @@ public sealed partial class SourceDocumentViewModel : DocumentViewModel
     [ObservableProperty]
     public partial bool IsDirty { get; set; }
 
-    /// <summary>Set by the view: moves the caret to a line and scrolls it into view.</summary>
-    public Action<int>? GoToLineRequested { get; set; }
+    /// <summary>Set by the view: moves the caret to a line, scrolls it into view, and takes the focus when asked to.</summary>
+    public Action<int, bool>? GoToLineRequested { get; set; }
+
+    /// <summary>A line asked for before the view was there to show it; the view goes to it when it attaches.</summary>
+    public (int Line, bool Focus)? PendingLine { get; set; }
 
     public bool HasErrors => Errors.Count > 0;
 
@@ -88,7 +91,17 @@ public sealed partial class SourceDocumentViewModel : DocumentViewModel
         return token == "'<EOF>'" ? "Unexpected end of file" : "Unexpected " + token;
     }
 
-    public void GoToLine(int line) => GoToLineRequested?.Invoke(line);
+    /// <summary>
+    /// Shows a line. Browsing the model passes <paramref name="focus"/> false,
+    /// so the arrow keys stay with the tree.
+    /// </summary>
+    public void GoToLine(int line, bool focus = true)
+    {
+        if (GoToLineRequested is { } go)
+            go(line, focus);
+        else
+            PendingLine = (line, focus);
+    }
 
     /// <summary>Runs a re-parse that is waiting for the typing pause, now.</summary>
     public void FlushPendingReparse()
