@@ -58,7 +58,7 @@ public sealed class SysmlWorkspace
         return workspace;
     }
 
-    /// <summary>Replaces one file's text — after an edit — and rebuilds the index.</summary>
+    /// <summary>Replaces one file's text and rebuilds the index.</summary>
     public SourceFile Update(string path, string text)
     {
         var file = SourceFile.ParseText(path, text);
@@ -67,7 +67,7 @@ public sealed class SysmlWorkspace
         return file;
     }
 
-    /// <summary>Replaces several files' text at once — one edit may touch many — and re-indexes once.</summary>
+    /// <summary>Replaces several files' text at once and re-indexes once.</summary>
     public void Update(IReadOnlyDictionary<string, string> texts)
     {
         foreach (var (path, text) in texts)
@@ -186,7 +186,7 @@ public sealed class SysmlWorkspace
 
     /// <summary>
     /// Whether a scope around <paramref name="from"/> imports a package this
-    /// folder does not hold — the standard library's ScalarValues, say. A name
+    /// folder does not hold. A name
     /// that does not resolve there most likely comes from that package, and
     /// calling it a problem would bury the real ones under hundreds of false ones.
     /// </summary>

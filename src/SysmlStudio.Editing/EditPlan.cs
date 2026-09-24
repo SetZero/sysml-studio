@@ -78,8 +78,7 @@ public sealed record EditRecord(string Description,
 /// <summary>
 /// Applies plans to a workspace. The gate: a file that parsed before an edit
 /// must still parse after it, or nothing is changed at all. Every edit is a
-/// patch over the text, so whatever it does not touch — comments, layout,
-/// other declarations — stays exactly as it was.
+/// patch over the text, so whatever it does not touch stays exactly as it was.
 /// </summary>
 public static class EditApplier
 {

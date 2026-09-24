@@ -98,7 +98,7 @@ public sealed class Relation(RelationKind kind, Element source, string targetRef
 
 /// <summary>
 /// One declared element: a package, a definition, a usage or a relationship.
-/// It knows where it came from — file plus token interval — because every edit
+/// It knows where it came from because every edit
 /// is a patch over that interval, not a re-print of a model.
 /// </summary>
 public sealed class Element

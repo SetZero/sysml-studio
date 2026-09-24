@@ -40,9 +40,7 @@ public sealed class MaturityOption(string keyword, bool isCurrent)
 }
 
 /// <summary>
-/// The inspector: what the selected element is — its kind, name and owner,
-/// what it specializes and holds, its maturity, its doc comment — and how
-/// many places name it.
+/// The inspector: what the selected element is and how many places name it.
 /// </summary>
 public sealed partial class PropertiesViewModel(ShellViewModel shell) : ObservableObject
 {

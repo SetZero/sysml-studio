@@ -167,8 +167,8 @@ public sealed class FrostPanel : Panel
     }
 
     /// <summary>
-    /// What the user does to the canvas — a drag, a pan, a zoom, a relayout, a
-    /// new document — comes through the pointer or through layout, so those
+    /// What the user does to the canvas comes through the pointer or through
+    /// layout, so those
     /// take a new snapshot, at most one every 40 milliseconds. What the program
     /// does to it without either, such as framing a diagram, is caught by a
     /// slower snapshot twice a second.

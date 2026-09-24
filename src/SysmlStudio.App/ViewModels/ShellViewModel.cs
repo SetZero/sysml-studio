@@ -319,8 +319,7 @@ public sealed partial class ShellViewModel : ObservableObject
         => SelectedElement is { } e && DiagramBuilder.KindsFor(e).Contains(kind);
 
     /// <summary>
-    /// The title bar's switcher: shows the selection — or, with nothing
-    /// selected, what the diagram in front is of — as its text or as another
+    /// The title bar's switcher: shows the selection as its text or as another
     /// kind of diagram, in the same tab.
     /// </summary>
     [RelayCommand]
@@ -723,7 +722,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     /// <summary>
     /// What to call a workspace: its folder, or the folder above when the
-    /// folder has a generic name — "ferrix/docs/sysml" is "ferrix", not "sysml".
+    /// folder has a generic name.
     /// </summary>
     public static string DisplayName(string folder)
     {

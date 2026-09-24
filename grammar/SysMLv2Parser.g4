@@ -155,7 +155,7 @@ name
     ;
 
 // Keywords that appear as names in the official OMG standard library.
-// These are contextually unreserved — valid as identifiers in name positions.
+// These are contextually unreserved.
 unreservedKeyword
     : TYPE
     | MULTIPLICITY
@@ -1133,7 +1133,7 @@ nonOccurrenceUsageElement
     | defaultReferenceUsage
     ;
 
-// end [multiplicity] <occurrence-keyword> — e.g. end [1] port p : P;
+// end [multiplicity] <occurrence-keyword>
 // The END keyword marks a feature as a connection/interface/flow endpoint.
 // The optional multiplicity constrains the end feature cardinality.
 endOccurrenceUsageElement

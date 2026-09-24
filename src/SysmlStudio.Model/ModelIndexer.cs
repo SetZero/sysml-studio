@@ -13,10 +13,7 @@ namespace SysmlStudio.Model;
 /// </para>
 /// <para>
 /// It works off rule names rather than generated context types on purpose: the
-/// grammar has ~450 rules, almost all of them shaped the same way — an element
-/// rule named "&lt;something&gt;Definition" or "&lt;something&gt;Usage" holding an
-/// "identification", an optional specialization part and a body of further
-/// element rules. Recognising that shape costs one pass and keeps working when
+/// grammar has ~450 rules, almost all of them shaped the same way. Recognising that shape costs one pass and keeps working when
 /// the grammar is re-vendored with rules this file has never heard of.
 /// </para>
 /// </summary>
@@ -163,8 +160,7 @@ public static class ModelIndexer
 
     /// <summary>
     /// Whether a rule matched any text. The grammar has rules that match
-    /// nothing — the conjugated port every port definition implicitly has —
-    /// and an element with no text is not an element anyone wrote.
+    /// nothing, and an element with no text is not an element anyone wrote.
     /// </summary>
     private static bool CoversText(ParserRuleContext ctx)
         => ctx.Stop is not null && ctx.Stop.TokenIndex >= ctx.Start.TokenIndex;
@@ -392,7 +388,7 @@ public static class ModelIndexer
 
     /// <summary>
     /// Descendants with one of the given rule names, without crossing into a
-    /// nested element — a part's own name must not be taken from a part inside it.
+    /// nested element.
     /// </summary>
     private static List<ParserRuleContext> FindShallow(ParserRuleContext ctx, params string[] ruleNames)
     {

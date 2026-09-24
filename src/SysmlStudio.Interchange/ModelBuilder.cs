@@ -34,8 +34,7 @@ namespace SysmlStudio.Interchange;
 /// <summary>
 /// <para>
 /// Turns a workspace's element tree into a SysML v2 model: SysML2.NET's POCO
-/// objects, owned the way the metamodel owns them — every member through a
-/// membership, every typing and specialization by the element it specializes.
+/// objects, owned the way the metamodel owns them.
 /// Both exports write this one tree, so the JSON and the XMI say the same thing.
 /// </para>
 /// <para>

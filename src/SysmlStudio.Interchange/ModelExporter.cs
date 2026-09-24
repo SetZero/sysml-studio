@@ -25,7 +25,7 @@ public enum ExportFormat
 }
 
 /// <summary>
-/// Writes a whole workspace — every file, as one model — in a standard SysML v2
+/// Writes a whole workspace in a standard SysML v2
 /// interchange format, so that other SysML v2 tools can read what this one
 /// edits. Element ids are derived from qualified names, so exporting the same
 /// model twice gives byte-identical files.
@@ -120,7 +120,7 @@ public static class ModelExporter
             // The same bytes on every platform, not Environment.NewLine.
             NewLine = "\n",
 
-            // A file, not a web page: keep "—" and "ä" readable instead of \u escapes.
+            // A file, not a web page: keep "ä" readable instead of \u escapes.
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         };
 
@@ -205,8 +205,7 @@ public static class ModelExporter
     }
 
     /// <summary>
-    /// SysML2.NET 0.23 writes a many-valued reference — a dependency's clients
-    /// and suppliers — as one &lt;client xmi:idref="…"/&gt; element per value,
+    /// SysML2.NET 0.23 writes a many-valued reference as one &lt;client xmi:idref="…"/&gt; element per value,
     /// but its own reader, like the pilot implementation, takes only the
     /// attribute form client="id id". Both are valid XMI; this rewrites the
     /// first into the second so that the file reads back.

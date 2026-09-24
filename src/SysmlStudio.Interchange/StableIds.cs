@@ -11,7 +11,7 @@ namespace SysmlStudio.Interchange;
 /// <remarks>
 /// An id is a name-based UUID (version 8, RFC 9562) over a SHA-256 of a key
 /// such as "Sample::Vehicle::engine" or "Sample::Vehicle::engine/typing". Keys
-/// the model repeats — two anonymous elements side by side — get "#2", "#3"
+/// the model repeats get "#2", "#3"
 /// appended in the order they are asked for, which is file order.
 /// </remarks>
 internal sealed class StableIds

@@ -442,7 +442,7 @@ public static class DiagramLayout
         return false;
     }
 
-    /// <summary>Liang–Barsky: whether the segment from a to b meets the box.</summary>
+    /// <summary>Liang-Barsky: whether the segment from a to b meets the box.</summary>
     private static bool SegmentHits((double X, double Y) a, (double X, double Y) b, Box box)
     {
         var dx = b.X - a.X;
@@ -584,9 +584,7 @@ public static class DiagramLayout
 
     /// <summary>
     /// Pushes boxes apart until none overlaps another. A fresh layout needs no
-    /// help; this is for boxes that grew after they were placed — measured
-    /// larger than estimated, or restored from a sidecar written before a box
-    /// gained a compartment. A box is moved down past whatever it overlaps,
+    /// help; this is for boxes that grew after they were placed. A box is moved down past whatever it overlaps,
     /// in reading order, so the picture keeps its shape.
     /// </summary>
     public static void RemoveOverlaps(Diagram diagram)

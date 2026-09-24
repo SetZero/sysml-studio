@@ -32,7 +32,7 @@ public sealed partial class DiagramDocumentView : UserControl
 
         // Nodify pans with the right button and handles its release, so the
         // context-menu event never reaches the canvas. A right click that did
-        // not move — no pan — opens the menu here instead.
+        // not move opens the menu here instead.
         Editor.AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         Editor.AddHandler(PointerReleasedEvent, OnPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
     }

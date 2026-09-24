@@ -449,7 +449,7 @@ public static class EdgeUntangler
 
         /// <summary>
         /// Where the segment from <paramref name="a"/> to <paramref name="b"/> is
-        /// inside the box, as parameters along it (Liang–Barsky); null if nowhere.
+        /// inside the box, as parameters along it (Liang-Barsky); null if nowhere.
         /// </summary>
         private static (double Enter, double Leave)? Clip((double X, double Y) a, (double X, double Y) b, (double X, double Y, double Width, double Height) box)
         {

@@ -6,7 +6,7 @@ namespace SysmlStudio.Diagrams;
 /// <para>Turns part of the model into a diagram.</para>
 /// <para>
 /// Every node is an element the model declares and every edge is a relation it
-/// writes down — a box that is not in the model is a picture of nothing. The
+/// writes down. The
 /// builders find their content by shape rather than by name, so an element
 /// added to the model turns up in its diagram with no change here.
 /// </para>
@@ -190,7 +190,7 @@ public static class DiagramBuilder
         return diagram;
     }
 
-    /// <summary>Matches a connector end — possibly a feature chain — to a node by its head.</summary>
+    /// <summary>Matches a connector end to a node by its head.</summary>
     private static DiagramNode? FindEnd(Diagram diagram, string? reference)
     {
         if (string.IsNullOrWhiteSpace(reference))

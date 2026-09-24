@@ -7,7 +7,7 @@ namespace SysmlStudio.App.Views;
 
 /// <summary>
 /// The settings dialog. While a shortcut is recording, every key pressed in
-/// the window is caught here — wherever the focus is — before the window's
+/// the window is caught here before the window's
 /// own shortcuts can act on it.
 /// </summary>
 public sealed partial class SettingsView : UserControl

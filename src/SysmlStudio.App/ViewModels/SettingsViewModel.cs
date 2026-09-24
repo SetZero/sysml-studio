@@ -29,7 +29,7 @@ public sealed partial class ShortcutRow(ShortcutAction action, string gesture) :
         {
             if (IsRecording)
                 return "Press keys…";
-            return HasGesture ? ShortcutCatalog.Display(Gesture) : "—";
+            return HasGesture ? ShortcutCatalog.Display(Gesture) : "None";
         }
     }
 

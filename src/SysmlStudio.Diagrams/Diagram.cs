@@ -89,7 +89,7 @@ public sealed class Diagram(DiagramKind kind, Element root)
     /// <summary>The element the diagram is "of": a package, a part def, an action, a state def.</summary>
     public Element Root { get; } = root;
 
-    public string Title => $"{Root.DisplayName} — {Kind}";
+    public string Title => $"{Root.DisplayName} · {Kind}";
 
     public List<DiagramNode> Nodes { get; } = [];
     public List<DiagramEdge> Edges { get; } = [];

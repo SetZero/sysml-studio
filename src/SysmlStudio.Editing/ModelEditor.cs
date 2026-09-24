@@ -73,7 +73,7 @@ public static partial class ModelEditor
 
         var files = edits.Select(e => e.Path).Distinct(StringComparer.OrdinalIgnoreCase).Count();
         var references = edits.Count - 1;
-        return new EditPlan($"Rename {oldName} to {newName} — {references} reference{(references == 1 ? "" : "s")} in {files} file{(files == 1 ? "" : "s")}", Dedupe(edits));
+        return new EditPlan($"Rename {oldName} to {newName}: {references} reference{(references == 1 ? "" : "s")} in {files} file{(files == 1 ? "" : "s")}", Dedupe(edits));
     }
 
     private static string ImportPath(string reference)
@@ -81,9 +81,8 @@ public static partial class ModelEditor
 
     /// <summary>
     /// Rewrites every segment of a written reference that names the element:
-    /// the segment whose prefix — "Vehicle::engine" in "Vehicle::engine.shaft" —
-    /// resolves to it. A chain through a renamed part is followed as well as a
-    /// reference that ends at it.
+    /// the segment whose prefix resolves to it. A chain through a renamed part
+    /// is followed as well as a reference that ends at it.
     /// </summary>
     private static void AddReferenceEdits(SysmlWorkspace workspace, List<TextEdit> edits, Element scope, SourceFile file,
                                           TextSpan span, Element element, string oldName, string newText)
@@ -151,8 +150,8 @@ public static partial class ModelEditor
         var warning = usages switch
         {
             0 => string.Empty,
-            1 => " — 1 reference will no longer resolve",
-            _ => $" — {usages} references will no longer resolve",
+            1 => ". 1 reference will no longer resolve",
+            _ => $". {usages} references will no longer resolve",
         };
         return new EditPlan($"Delete {element.Kind} {element.DisplayName}{warning}", [new TextEdit(file.Path, start, stop - start, string.Empty)]);
     }

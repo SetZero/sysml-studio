@@ -108,7 +108,7 @@ public static class ShortcutCatalog
 
 /// <summary>
 /// The gestures in force: each shortcut's default unless the user set another.
-/// Its indexer gives the tooltip text for a shortcut — "Undo (Ctrl+Z)" — so
+/// Its indexer gives the tooltip text for a shortcut, so
 /// the views can bind to <c>Keys[undo]</c> and follow a change.
 /// </summary>
 public sealed class ShortcutMap : ObservableObject
