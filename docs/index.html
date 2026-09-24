@@ -163,7 +163,7 @@ nav .links a:hover { color: var(--text); text-decoration: none; }
 
 /* Hero: copy on the left, the window on the right. The window is sized by
    the viewport's height as well as its width, so it is never cut off; it
-   runs to the edge of the screen and fades out there. */
+   fades out on its outer edge, a little short of the screen's. */
 .hero {
   position: relative; overflow-x: clip;
   min-height: calc(100svh - 58px); display: flex; align-items: center; padding: 56px 0;
@@ -178,7 +178,7 @@ nav .links a:hover { color: var(--text); text-decoration: none; }
 .hero-grid {
   position: relative; z-index: 3; width: 100%;
   display: grid; grid-template-columns: minmax(320px, 480px) minmax(0, 1fr); gap: 32px; align-items: center;
-  padding-left: max(24px, calc((100vw - 1160px) / 2 + 24px)); padding-right: 0;
+  padding-left: max(24px, calc((100vw - 1160px) / 2 + 24px)); padding-right: 32px;
 }
 .hero-copy { position: relative; z-index: 2; }
 .hero h1 { font-size: clamp(38px, 3.5vw, 58px); letter-spacing: -.02em; font-weight: 500; }
