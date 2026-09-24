@@ -30,6 +30,7 @@ run test dotnet test SysmlStudio.slnx --no-build --nologo
 #    parses and every element lands somewhere in the text.
 model="${SYSML_STUDIO_MODEL:-../os/docs/sysml}"
 run sample dotnet run --project tools/ParseCheck --no-build -- samples/vehicle
+run sample dotnet run --project tools/ParseCheck --no-build -- samples/drone
 if [ -d "$model" ]; then
     run model dotnet run --project tools/ParseCheck --no-build -- "$model"
 else

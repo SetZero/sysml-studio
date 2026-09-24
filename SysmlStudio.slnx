@@ -13,5 +13,6 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/ParseCheck/ParseCheck.csproj" />
+    <Project Path="tools/Screenshots/Screenshots.csproj" />
   </Folder>
 </Solution>
